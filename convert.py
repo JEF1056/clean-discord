@@ -31,7 +31,7 @@ def clean(text, author=False):
     "https://" in text or \
     "http://" in text: return None   
      
-    temp=""
+    temp="" #this loop lopps through all the known alphabets and their conversions
     for char in text.strip():
         convi=None
         if char not in alphabets[0]:

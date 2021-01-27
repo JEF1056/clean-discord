@@ -93,5 +93,8 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 build=""      
                 completed+=1
                 last_known_time=today
-            pbar.set_description(f'Processing {file.split(" ")[0]}-{file.split(" ")[4]}-{file.split(" ")[6]}, removed:{disposed}')
+                
+            #CasualConversation - I made this - writers [695705759597723689].json
+            title=file.split(" - ")[0,1]
+            pbar.set_description(f'Processing {title[0]}-{title[1]}, lines {completed} removed:{disposed}')
             pbar.update(1)

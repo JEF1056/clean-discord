@@ -40,6 +40,7 @@ def clean(text, author=False):
         #text= re.sub(r"([A-Za-z])\.{2,}", r"\1 ... ", text.strip())
     text= re.sub(r"([\s!?])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
     text= re.sub(r'\s([?.!"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
+    text= re.sub(r':[^:\s]*(?:::[^:\s]*)*:', "", text) #begone, discord emojis
     text= text.replace("\n","\\n") #handle newlines
     
     try: prediction_vals=list(dict(detect(text)).values())[1:]
@@ -74,7 +75,7 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
             last_known_time=0
             build=""
             last_id=re.findall(r"\[\d{18,}\]",file)[0]
-        for curr_message in json.load(io.open(f"data/{file}", mode="r", encoding="utf-8"))["messages"]:
+        for curr_message in json.load(io.open(f"{data_dir}/{file}", mode="r", encoding="utf-8"))["messages"]:
             msg=clean(curr_message["content"])
             if msg != None:
                 if curr_message["author"]["name"] != last_known_name:

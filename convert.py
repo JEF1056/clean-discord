@@ -10,11 +10,7 @@ from tox_block.prediction import make_single_prediction as detect
 
 data_dir="data-1"
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-# Keras outputs warnings using `print` to stderr so let's direct that to devnull temporarily
-stderr = sys.stderr
-sys.stderr = open(os.devnull, 'w')
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '4'
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',

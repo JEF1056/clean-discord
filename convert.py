@@ -20,7 +20,9 @@ normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á
     'ă':'a', 'î':'i', 'â':'a', 'ș':'s', 'ț':'t', 'Ă':'A', 'Î':'I', 'Â':'A', 'Ș':'S', 'Ț':'T',}
 
 def clean(text, author=False):
-    if "```" in text: return None   
+    if "```" in text or \
+    "https://" in text or \
+    "http://" in text: return None   
      
     temp=""
     for char in text.strip():
@@ -90,5 +92,6 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 f.write(build+"\n")      
                 build=""      
                 completed+=1
+                last_known_time=today
             pbar.set_description(f'Processing {file.split(" ")[0]}-{file.split(" ")[4]}-{file.split(" ")[6]}, removed:{disposed}')
             pbar.update(1)

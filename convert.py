@@ -25,12 +25,14 @@ def clean(text, author=False):
     temp=""
     for char in text.strip():
         convi=None
-        for alphabet in alphabets[1:]:
-            try: convi=alphabet.index(char)
-            except ValueError: pass
-            if convi != None:
-                temp+= alphabets[0][convi]
-                break
+        if char not in alphabets[0]:
+            for alphabet in alphabets[1:]:
+                try: convi=alphabet.index(char)
+                except ValueError: pass
+                if convi != None:
+                    print(alphabet)
+                    temp+= alphabets[0][convi]
+                    break
         if convi==None: temp+=char
     text=temp
     text="".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()])
@@ -40,7 +42,6 @@ def clean(text, author=False):
         #text= re.sub(r"([A-Za-z])\.{2,}", r"\1 ... ", text.strip())
     text= re.sub(r"([\s!?])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
     text= re.sub(r'\s([?.!"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
-    text= re.sub(r':[^:\s]*(?:::[^:\s]*)*:', "", text) #begone, discord emojis
     text= text.replace("\n","\\n") #handle newlines
     
     try: prediction_vals=list(dict(detect(text)).values())[1:]

@@ -92,7 +92,7 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 f.write(build+"\n")      
                 build=""      
                 completed+=1
-                last_known_time=today
+            last_known_time=today
                 
             #CasualConversation - I made this - writers [695705759597723689].json
             title=file.split(" - ")

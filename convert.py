@@ -53,14 +53,14 @@ def clean(text, author=False):
             return None
         else: 
             # add code to replace names
-            return "OHMYGODTHISISTOTALLYANAME"
+            return "[insertnamehere]"
     if text != "\\n" and text != " " and author==False:
         return text
     elif text != "\\n" and text != " " and author==True:
         # add code to replace names
-        return "OHMYGODTHISISTOTALLYANAME"
+        return text
     else:
-        return None
+        return "[insertnamehere]"
 
 all_messages=0
 with tqdm(os.listdir(data_dir), desc="Reading files") as pbar:
@@ -88,7 +88,7 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                     build+="\\n"+msg
             else:disposed+=1
             today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S").timetuple())
-            if today-last_known_time > 1800:
+            if today-last_known_time > 1800 and last_known_time != 0:
                 f.write(build+"\n")      
                 build=""      
                 completed+=1

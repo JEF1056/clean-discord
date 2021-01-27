@@ -43,13 +43,15 @@ def clean(text, author=False):
                     break
         if convi==None: temp+=char
     text=temp
-    text="".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()])
-    text= re.sub('([:.,!?()]) ([:.,!?()])', r'\1\2', text) #handle extraneous spaces between punctuation    
-    text= re.sub(r"[^A-Za-z1-9.!?\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+", "",text.strip()) #handle non-emoji, punctuation, and letters
+    text= text.replace("\t"," ") #handle tabs
+    text= re.sub(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\U00000020]', " ", text) #handle... interesting spaces
+    text="".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
+    text= re.sub(r'([:.,!?()]) ([:.,!?()])', r'\1\2', text) #handle extraneous spaces between punctuation    
+    text= re.sub(r"[^A-Za-z1-9.!?\"\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+", "",text.strip()) #handle non-emoji, punctuation, and letters
     text= re.sub(r"(?i)([\.a-z])\1{3,}", r"\1\1\1", text.strip()) #handle excessive repeats of letters or ...
         #text= re.sub(r"([A-Za-z])\.{2,}", r"\1 ... ", text.strip())
-    text= re.sub(r"([\s!?])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
-    text= re.sub(r'\s([?.!"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
+    text= re.sub(r"([\s!?\"])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
+    text= re.sub(r'\s([?.!\"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
     
     try: prediction_vals=list(dict(detect(text)).values())[1:]

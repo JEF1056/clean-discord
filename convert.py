@@ -32,7 +32,6 @@ def clean(text, author=False):
                 try: convi=alphabet.index(char)
                 except ValueError: pass
                 if convi != None:
-                    print(alphabet)
                     temp+= alphabets[0][convi]
                     break
         if convi==None: temp+=char
@@ -87,7 +86,8 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 else:
                     build+="\\n"+msg
             else:disposed+=1
-            today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S").timetuple())
+            try: today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S").timetuple())
+            except: print(curr_message["timestamp"])
             if today-last_known_time > 1800 and last_known_time != 0:
                 f.write(build+"\n")      
                 build=""      

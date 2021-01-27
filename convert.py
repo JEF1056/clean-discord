@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import sys
 import json
 import time
 from tqdm import tqdm
@@ -8,6 +9,12 @@ from datetime import datetime
 from tox_block.prediction import make_single_prediction as detect
 
 data_dir="data-1"
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# Keras outputs warnings using `print` to stderr so let's direct that to devnull temporarily
+stderr = sys.stderr
+sys.stderr = open(os.devnull, 'w')
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
@@ -86,10 +93,14 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 else:
                     build+="\\n"+msg
             else:disposed+=1
-            try: today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0], "%Y-%m-%dT%H:%M:%S").timetuple())
+            try: today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
             except: print(curr_message["timestamp"])
             if today-last_known_time > 1800 and last_known_time != 0:
-                f.write(build+"\n")      
+                if build.startswith("\t"): build=build[1:]
+                if build.startswith("\\n"): build=build[2:]
+                if build.count('\t') < 4:
+                    f.write(build+"\n")
+                    disposed+=build.count('\t')+1
                 build=""      
                 completed+=1
             last_known_time=today

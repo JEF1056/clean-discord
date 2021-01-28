@@ -20,7 +20,7 @@ parser.add_argument('-update_interval', type=int, default=1000,
 parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True, default=False,
                     help="disable TQDM description")
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
-                    help="disable TQDM description")
+                    help="turn on cache when reading files (uses a lot of memory)")
 parser.add_argument('-step', type=int, default=0, choices=[0,1],
                     help='TQDM update interval')
 
@@ -38,7 +38,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 disposed_tox=0
 disposed=0 
 completed=0
-len_all_messages=0
+len_all_messages=1
 
 if args.step < 1:
     all_messages={} if args.cache else 0

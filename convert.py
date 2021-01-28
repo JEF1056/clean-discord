@@ -39,7 +39,7 @@ def gen_name(username):
             out_name=random.choice(names)
             replace_names[username]=out_name
         return out_name
-    except: return random.choice(names)
+    except: return "@"+random.choice(names)
 
 def clean(text, author=None):
     if "```" in text: return None   
@@ -61,23 +61,13 @@ def clean(text, author=None):
     if author == None: text= re.sub(r'@Deleted User', gen_name, text) #replace "deleted users" with names
     text= re.sub(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\U00000020]', " ", text) #handle... interesting spaces
     text= "".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
-    text= re.sub(r'([:.,!?@]|\\n) ([:.,!?]|\\n)', r'\1\2', text) #handle extraneous spaces between punctuation    
-    text= re.sub(r"[^A-Za-z1-9.!@?\"\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+", "",text.strip()) #handle non-emoji, punctuation, and letters
+    text= re.sub(r'([:.,!?@\'\"]|\\n) ([:.,!?\'\"]|\\n)', r'\1\2', text) #handle extraneous spaces between punctuation    
+    text= re.sub(r"[^A-Za-z1-9.!@?\"\'\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+", "",text.strip()) #handle non-emoji, punctuation, and letters
     text= re.sub(r"(?i)([\.a-z])\1{3,}", r"\1\1\1", text.strip()) #handle excessive repeats of letters or ...
         #text= re.sub(r"([A-Za-z])\.{2,}", r"\1 ... ", text.strip())
-    text= re.sub(r"([\s!?@\"])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
+    text= re.sub(r"([\s!?@\"\'])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
     text= re.sub(r'\s([?.!\"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
-    
-    if text != "\\n" and text != " " and text != "" and author==None:
-        return text
-    elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author!=None:
-        # add code to replace names
-        return text
-    elif author!=None:
-        return gen_name(author)
-    else:
-        return None
 
 all_messages=0
 with tqdm(os.listdir(data_dir), desc="Reading files") as pbar:

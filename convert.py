@@ -65,13 +65,17 @@ with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(o
         for t in threads:
             t.join()
         print(f"Conversations: {completed} Removed: {disposed}")
+        
+    for completed_work in olist:
+        for line in completed_work:
+            f.write("\n"+line)
             
 
 del all_messages
 disposed_tox=0
 if args.nontoxic:
     from tox_block.prediction import make_predictions as detect       
-    to_clean=io.open(os.path.join(args.out,"context.txt"), mode="r", encoding="utf-8").read().strip().split("\n")
+    to_clean=io.open(os.path.join(args.out,"context.txt"), mode="r", encoding="utf-8").read().strip().split("\n")[1:]
     with io.open(os.path.join(args.out,"context-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc="Processing messages") as pbar:
             batch=[]

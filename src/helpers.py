@@ -25,7 +25,7 @@ class worker(threading.Thread):
         self.pbar, self.disposed, self.completed, self.args = pbar, disposed, completed, args
 
     def run(self):
-        #print("Starting " + self.filename)
+        self.pbar.set_description(f"{threading.active_count()} active workers")
         last_known_name=""
         last_known_time=0
         build=""
@@ -54,10 +54,9 @@ class worker(threading.Thread):
             last_known_time=today
                 
             if self.args.workers == 1: self.pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {self.completed} Removed: {self.disposed}')
-            else: self.pbar.set_description(f"{threading.active_count()} active workers")
             self.pbar.update(1)
         self.olist.append(temp)
-        #print("Exiting " + self.filename)
+        self.pbar.set_description(f"{threading.active_count()} active workers")
 
 def str2bool(v):
     if isinstance(v, bool):

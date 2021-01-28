@@ -31,6 +31,7 @@ args = parser.parse_args()
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 assert args.workers <= len(os.listdir(args.dir))
+assert args.workers > 0
 
 all_messages=0 if args.memory_efficient else {} 
 with tqdm(os.listdir(args.dir), desc="Reading files") as pbar:

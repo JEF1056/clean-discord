@@ -21,7 +21,7 @@ parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True
                     help="disable TQDM description")
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
                     help="disable TQDM description")
-parser.add_argument('-step', type=int, default=0, choices=[0,1]
+parser.add_argument('-step', type=int, default=0, choices=[0,1],
                     help='TQDM update interval')
 
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,

@@ -72,6 +72,7 @@ if args.step == "clean":
             title=file.split(" - ")
             try: part=re.findall(r"\[part (\d)\]",file)[0]
             except: part=0
+            if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             if re.findall(r"\[\d{18,}\]",file)[0] != last_id:
                 last_known_name=""
                 last_known_time=0

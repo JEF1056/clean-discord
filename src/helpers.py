@@ -33,7 +33,7 @@ class worker(threading.Thread):
         title=self.filename.split(" - ")
         try: part=re.findall(r"\[part (\d)\]",self.filename)[0]
         except: part=0
-        for curr_message in self.ilist[self.filename]:
+        for curr_message in self.ilist:
             msg=clean(curr_message["content"])
             if msg != None:
                 if curr_message["author"]["name"] != last_known_name:

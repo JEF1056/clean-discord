@@ -55,7 +55,7 @@ with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(o
             if type(all_messages)==dict:
                 ilist=all_messages[files[i]]
             else:
-                ilist=json.load(io.open(os.path.join(args.dir,files[i]), mode="r", encoding="utf-8"))["messages"]
+                ilist={files[i]: json.load(io.open(os.path.join(args.dir,files[i]), mode="r", encoding="utf-8"))["messages"]}
             t=worker(files[i], ilist, olist, pbar, disposed, completed, args)
             t.start()
             threads.append(t)

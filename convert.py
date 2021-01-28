@@ -16,7 +16,6 @@ parser.add_argument('-out', type=str, default="./",
 parser.add_argument('-conversation_timeout', type=int, default=1800,
                     help='amount of time before a conversation is considered dead (in minutes) default is 30 min')
 
-
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
                     help="use an AI to clean text files")
 parser.add_argument("-batches", type=int, default=100,
@@ -26,7 +25,6 @@ parser.add_argument("-confidence", type=float, default=0.85,
 args = parser.parse_args()
 
 
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 all_messages={}
@@ -34,6 +32,9 @@ with tqdm(os.listdir(args.dir), desc="Reading files") as pbar:
     for file in pbar:
         all_messages[file]=json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
         pbar.set_description(f"Found {sum([len(all_messages[msgs]) for msgs in all_messages])} messages")
+   
+try: os.mkdir(args.out)
+except FileExistsError: pass
    
 disposed=0 
 completed=0

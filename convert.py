@@ -28,6 +28,8 @@ parser.add_argument("-ascii", type=str2bool, nargs='?', const=True, default=Fals
 
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
                     help="use an AI to clean text files")
+parser.add_argument('-nontoxic_source', type=str, default="context", choices=["context", "context-ascii"],
+                    help="clean ascii or non-ascii context")
 parser.add_argument("-batches", type=int, default=100,
                     help="minimum number of batches to feed the AI (only needed if -nontoxic is used)")
 parser.add_argument("-confidence", type=float, default=0.85,
@@ -50,14 +52,19 @@ if args.step == "clean":
             if type(all_messages) == tuple:
                 all_messages[file]=json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
             else:
-                all_messages+=len(json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"])
+                with open(os.path.join(args.dir,file), 'rb') as f:
+                    f.seek(-2, os.SEEK_END)
+                    while f.read(1) != b' ':
+                        f.seek(-2, os.SEEK_CUR)
+                    last_line = f.readline().decode()
+                    all_messages+=int(int(last_line))
             pbar.set_description(f"Found {sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages} messages")
     
     try: os.mkdir(args.out)
     except FileExistsError: pass
     
     len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages
-    if args. ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
+    if args.ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
     with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
         last_id="0"
         for file in len(all_data_files):
@@ -101,8 +108,8 @@ if args.step == "clean":
 
 if args.step == "nontoxic" or args.nontoxic:
     from tox_block.prediction import make_predictions as detect       
-    to_clean=io.open(os.path.join(args.out,"context.txt"), mode="r", encoding="utf-8").read().strip().split("\n")
-    with io.open(os.path.join(args.out,"context-detox.txt"), mode="w", encoding="utf-8") as f:
+    to_clean=io.open(os.path.join(args.out,f"{args.nontoxic_source}.txt"), mode="r", encoding="utf-8").read().strip().split("\n")
+    with io.open(os.path.join(args.out,f"{args.nontoxic_source}-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc="Processing messages") as pbar:
             batch=[]
             for curr_index,conversation in enumerate(pbar):
@@ -111,7 +118,7 @@ if args.step == "nontoxic" or args.nontoxic:
                     batch_placement,sents=[0],[]
                     for conv in batch:
                         splt=[e for e in conv.strip().split("\t") if e != ""]
-                        sents.extend(splt)
+                        sents.extend(splt) #not sure currently if the tox-block model is affected by "\\n", experiment?
                         batch_placement.append(len(splt))
                     prediction_vals=detect(sents)
                     scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]

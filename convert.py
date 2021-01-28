@@ -32,11 +32,14 @@ normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á
     'ă':'a', 'î':'i', 'â':'a', 'ș':'s', 'ț':'t', 'Ă':'A', 'Î':'I', 'Â':'A', 'Ș':'S', 'Ț':'T',}
 
 def gen_name(username):
-    try: out_name=replace_names[username]
-    except: 
-        out_name=random.choice(names)
-        replace_names[username]=out_name
-    return out_name
+    try:
+        int(username)
+        try: out_name=replace_names[username]
+        except: 
+            out_name=random.choice(names)
+            replace_names[username]=out_name
+        return out_name
+    except: return random.choice(names)
 
 def clean(text, author=None):
     if "```" in text: return None   
@@ -55,6 +58,7 @@ def clean(text, author=None):
         if convi==None: temp+=char
     text= temp
     text= text.replace("\t"," ") #handle tabs
+    if author == None: text= re.sub(r'@Deleted User', gen_name, text) #replace "deleted users" with names
     text= re.sub(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\U00000020]', " ", text) #handle... interesting spaces
     text= "".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
     text= re.sub(r'([:.,!?@]|\\n) ([:.,!?]|\\n)', r'\1\2', text) #handle extraneous spaces between punctuation    

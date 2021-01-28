@@ -81,19 +81,25 @@ if args.nontoxic:
     to_clean=io.open(os.path.join(args.out,"context.txt"), mode="r", encoding="utf-8").read().strip().split("\n")
     with io.open(os.path.join(args.out,"context-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc="Processing messages") as pbar:
-            for conversation in pbar:
-                sents=conversation.strip().split("\t")
-                pbar.set_description(f"Batch of {len(sents)}, Removed {disposed_tox}")
-                prediction_vals=detect(sents)
-                print(sents[len(sents)-1])
-                print(prediction_vals[len(sents)-1])
-                scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
-                to_write=[]
-                for i,v in enumerate(scores):
-                    if v <= args.confidence: to_write.append(sents[i])
-                    else: disposed_tox+=1
-                to_write="\t".join(to_write)
-                f.write(to_write+"\n")
+            batch=[]
+            for curr_index,conversation in enumerate(pbar):
+                batch.append(conversation)
+                if curr_index==len(to_clean) or sum([len(batch[msgs]) for msgs in batch]) >=args.batches:
+                    batch_placement,sents=[],[]
+                    for conv in batch:
+                        splt=conv.strip().split("\t")
+                        sents.extend(splt)
+                        batch_placement.append(len(splt))
+                    prediction_vals=detect(sents)
+                    scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
+                    for batch_score in [scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]:
+                        to_write=[]
+                        for i,v in enumerate(scores):
+                            if v <= args.confidence: to_write.append(sents[i])
+                            else: disposed_tox+=1
+                        to_write="\t".join(to_write)
+                        f.write(to_write+"\n")
+                    pbar.set_description(f"Batch of {len(sents)}, Removed {disposed_tox}")
 
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
 print(f"Dataset final size: {len_all_messages - disposed - disposed_tox} messages, reduced from {sizeof_fmt(sum([os.path.getsize(f'{os.path.join(args.dir,fle)}') >> 20 for fle in os.listdir(args.dir)]))} to {sizeof_fmt(os.path.getsize(os.path.join(args.out,'context-detox.txt'))) if args.nontoxic else sizeof_fmt(os.path.getsize(os.path.join(args.out,'context.txt')))}")

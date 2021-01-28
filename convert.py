@@ -14,7 +14,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 test_neg=list(dict(detect("test")).values())[1:]
 test_pos=list(dict(detect("slut")).values())[1:]
 print(f'''\n\nFalse:{sum(test_neg)/len(test_neg)}:{test_neg}
-      True:{sum(test_pos)/len(test_pos)}:{test_pos}''')
+True:{sum(test_pos)/len(test_pos)}:{test_pos}''')
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
@@ -99,11 +99,12 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
             except: print(curr_message["timestamp"])
             if today-last_known_time > 1800 and last_known_time != 0:
                 if build.startswith("\t"): build=build[1:]
-                if build.startswith("\\n"): build=clean(last_known_name,author=True)+build[2:]
+                if build.startswith("\\n"): build=build[2:]
                 if build.count("\t") > 1 and build != "":
                     f.write(build.replace("\n","")+"\n")
                     completed+=1
                 build=""
+                last_known_name=""
             last_known_time=today
                 
             #CasualConversation - I made this - writers [695705759597723689].json

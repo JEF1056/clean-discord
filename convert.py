@@ -7,7 +7,6 @@ import time
 import random
 from tqdm import tqdm
 from datetime import datetime
-from tox_block.prediction import make_predictions as detect
 
 data_dir="data"
 
@@ -124,7 +123,8 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 part=0
             pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)
-            
+
+from tox_block.prediction import make_predictions as detect       
 with io.open(f"context.txt", mode="r", encoding="utf-8").read().strip().split("\n") as to_clean, io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
     with tqdm(to_clean, desc="Processing messages") as pbar:
         for conversation in pbar:

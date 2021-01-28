@@ -139,5 +139,5 @@ with io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
             to_write="\t".join(to_write)
             f.write(to_write+"\n")
 
-print(f"Removed {disposed}+{disposed_tox}/{all_messages}, {round((disposed+disposed_tox)/all_messages,2)}%")
-print(f"Dataset final size: {all_messages - disposed - disposed_tox} messages, reduced from {sum([os.path.getsize(f'{data_dir}/{fle}') >> 20 for fle in os.listdir(data_dir)])}mb to {os.path.getsize('context-detox.txt') >> 20}mb")
+print(f"Removed {disposed}+{disposed_tox}/{sum([len(all_messages[msgs]) for msgs in all_messages])}, {round((disposed+disposed_tox)/sum([len(all_messages[msgs]) for msgs in all_messages]),2)}%")
+print(f"Dataset final size: {sum([len(all_messages[msgs]) for msgs in all_messages]) - disposed - disposed_tox} messages, reduced from {sum([os.path.getsize(f'{data_dir}/{fle}') >> 20 for fle in os.listdir(data_dir)])}mb to {os.path.getsize('context-detox.txt') >> 20}mb")

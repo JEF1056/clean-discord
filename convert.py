@@ -133,5 +133,5 @@ with io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
             pbar.set_description(f"Batch of {len(sents)}")
             prediction_vals=detect(sents)
             scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
-            to_write="\t".join([sents[i] for i in scores if i >= 0.9])
+            to_write="\t".join([sents[i] for i, v in enumerate(scores) if v >= 0.9])
             f.write(to_write+"\n")

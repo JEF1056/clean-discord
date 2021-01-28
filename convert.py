@@ -120,7 +120,6 @@ with tqdm(total=sum([len(all_messages[msgs]) for msgs in all_messages]), desc="P
                 part=0
             pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)
-        del all_messages[file]
 
 from tox_block.prediction import make_predictions as detect       
 to_clean=io.open(f"context.txt", mode="r", encoding="utf-8").read().strip().split("\n")

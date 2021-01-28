@@ -68,6 +68,16 @@ def clean(text, author=None):
     text= re.sub(r"([\s!?@\"\'])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
     text= re.sub(r'\s([?.!\"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
+    
+    if text != "\\n" and text != " " and text != "" and author==None:
+        return text
+    elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author!=None:
+        # add code to replace names
+        return text
+    elif author!=None:
+        return gen_name(author)
+    else:
+        return None
 
 all_messages=0
 with tqdm(os.listdir(data_dir), desc="Reading files") as pbar:

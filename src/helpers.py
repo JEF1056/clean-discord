@@ -2,7 +2,6 @@ import io
 import re
 import random
 import argparse
-from math import log
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 bot_prefixes=io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n")
@@ -27,19 +26,12 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-unit_list = zip(['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'], [0, 0, 1, 2, 2, 2])
-def sizeof_fmt(num):
-    """Human friendly file size"""
-    if num > 1:
-        exponent = min(int(log(num, 1024)), len(unit_list) - 1)
-        quotient = float(num) / 1024**exponent
-        unit, num_decimals = unit_list[exponent]
-        format_string = '{:.%sf} {}' % (num_decimals)
-        return format_string.format(quotient, unit)
-    if num == 0:
-        return '0 bytes'
-    if num == 1:
-        return '1 byte'
+def sizeof_fmt(size, decimal_places=2):
+    for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']:
+        if size < 1024.0 or unit == 'PiB':
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f} {unit}"
 
 def gen_name(username):
     try:
@@ -74,7 +66,7 @@ def clean(text, author=None):
     text= re.sub(r'([:.,!?@\'\"]|\\n) ([:.,!?\'\"]|\\n)', r'\1\2', text) #handle extraneous spaces between punctuation    
     text= re.sub(r"[^A-Za-z1-9.,!@?\"\'\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+", "",text.strip()) #handle non-emoji, punctuation, and letters
     text= re.sub(r"(?i)([\.\'\"@?!a-z])\1{3,}", r"\1\1\1", text.strip()) #handle excessive repeats of punctuation, limited to 3
-    text= re.sub(r"(?i)\s(.+?)\1+\s", r" \1 ", text.strip()) #handle repeated words
+    text= re.sub(r"(?i)\s(.+?)\1+", r" \1", text.strip()) #handle repeated words
     if author == None: text= re.sub(r'@Deleted User', gen_name, text) #replace "deleted users" with names
     text= re.sub(r"([\s!?@\"\'])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
     text= re.sub(r'\s([?.!\"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text

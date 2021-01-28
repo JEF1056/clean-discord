@@ -133,7 +133,7 @@ if args.step == "nontoxic" or args.nontoxic:
                             else: disposed_tox+=1
                         to_write="\t".join(to_write)
                         f.write(to_write+"\n")
-                    pbar.set_description(f"Batch of {len(sents)}, Removed {disposed_tox}")
+                    pbar.set_description(f"From {f"{args.nontoxic_source}.txt"}, Batch of {len(sents)}, Removed {disposed_tox}")
                     batch=[]
 
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")

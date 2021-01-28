@@ -105,7 +105,7 @@ if args.step < 2:
                     if curr_index==len(to_clean)-1 or sum([len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
                         batch_placement,sents=[0],[]
                         for conv in batch:
-                            splt=conv.strip().split("\t")
+                            splt=conv.strip().split("\t").remove("")
                             sents.extend(splt)
                             batch_placement.append(len(splt))
                         prediction_vals=detect(sents)

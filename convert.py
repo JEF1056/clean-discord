@@ -76,7 +76,7 @@ with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(o
             pbar.update(1)
 
 disposed_tox=0
-if nontoxic:
+if args.nontoxic:
     from tox_block.prediction import make_predictions as detect       
     to_clean=io.open(os.path.join(args.out,"context.txt"), mode="r", encoding="utf-8").read().strip().split("\n")
     with io.open(os.path.join(args.out,"context-detox.txt"), mode="w", encoding="utf-8") as f:

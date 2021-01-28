@@ -15,6 +15,10 @@ parser.add_argument('-out', type=str, default="./",
                     help='the folder to output the cleaned files')
 parser.add_argument('-conversation_timeout', type=int, default=1800,
                     help='amount of time before a conversation is considered dead (in minutes) default is 30 min')
+parser.add_argument('-workers', type=int, default=10,
+                    help='number of workers to use')
+parser.add_argument("-memory_efficient", type=str2bool, nargs='?', const=True, default=False,
+                    help="lazy load files instead of stroying them in memory")
 
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
                     help="use an AI to clean text files")
@@ -27,54 +31,38 @@ args = parser.parse_args()
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-all_messages={}
+all_messages=0 if args.memory_efficient else {} 
 with tqdm(os.listdir(args.dir), desc="Reading files") as pbar:
     for file in pbar:
-        all_messages[file]=json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
-        pbar.set_description(f"Found {sum([len(all_messages[msgs]) for msgs in all_messages])} messages")
+        if type(all_messages)==dict:
+            all_messages[file]=json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
+        else:
+            all_messages+=len(json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"])
+        pbar.set_description(f"Found {sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==dict else all_messages} messages")
    
 try: os.mkdir(args.out)
 except FileExistsError: pass
    
 disposed=0 
 completed=0
-len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages])
+olist=[]
+threads=[]
+len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==dict else all_messages
 with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
-    last_id="0"
-    for file in all_messages:
-        if re.findall(r"\[\d{18,}\]",file)[0] != last_id:
-            last_known_name=""
-            last_known_time=0
-            build=""
-            last_id=re.findall(r"\[\d{18,}\]",file)[0]
-        for curr_message in all_messages[file]:
-            msg=clean(curr_message["content"])
-            if msg != None:
-                if curr_message["author"]["name"] != last_known_name:
-                    last_known_name=curr_message["author"]["name"]
-                    build+=f"\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}"
-                else:
-                    build+="\\n"+msg
-            else:disposed+=1
-            try: today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
-            except: print(curr_message["timestamp"])
-            if today-last_known_time > args.conversation_timeout and last_known_time != 0:
-                if build.startswith("\t"): build=build[1:]
-                if build.startswith("\\n"): build=build[2:]
-                if build.count("\t") > 1 and build != "":
-                    f.write(build.replace("\n","")+"\n")
-                    completed+=1
-                build=""
-                last_known_name=""
-            last_known_time=today
-                
-            title=file.split(" - ")
-            try:
-                part=re.findall(r"\[part (\d)\]",file)[0]
-            except:
-                part=0
-            pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
-            pbar.update(1)
+    files=os.listdir(args.dir)
+    for ind in range(0,len(files), args.workers):
+        for i in range(ind, ind+args.workers):
+            if type(all_messages)==dict:
+                ilist=all_messages[files[i]]
+            else:
+                ilist=json.load(io.open(os.path.join(args.dir,files[i]), mode="r", encoding="utf-8"))["messages"]
+            t=worker(files[i], ilist, olist, pbar, disposed, completed, args)
+            t.start()
+            threads.append(t)
+            
+        for t in threads:
+            t.join()
+            
 
 del all_messages
 disposed_tox=0

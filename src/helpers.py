@@ -1,7 +1,10 @@
 import io
 import re
 import random
+import threading
 import argparse
+import time
+import datetime
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
@@ -14,6 +17,46 @@ normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á
     'ï':'i', 'ð':'o', 'ñ':'n', 'ń':'n', 'ò':'o', 'ó':'o', 'ô':'o', 'õ':'o', 'ö':'o', 'ø':'o', 'ù':'u',
     'ú':'u', 'û':'u', 'ü':'u', 'ý':'y', 'ý':'y', 'þ':'b', 'ÿ':'y', 'ƒ':'f',
     'ă':'a', 'î':'i', 'â':'a', 'ș':'s', 'ț':'t', 'Ă':'A', 'Î':'I', 'Â':'A', 'Ș':'S', 'Ț':'T',}
+
+class worker(threading.Thread):
+    def __init__(self, filename, ilist, olist, pbar, disposed, completed, args):
+        threading.Thread.__init__(self)
+        self.ilist = ilist
+        self.olist = olist
+
+    def run(self):
+        print("Starting " + self.filename)
+        last_known_name=""
+        last_known_time=0
+        build=""
+        temp=[]
+        title=self.filename.split(" - ")
+        try: part=re.findall(r"\[part (\d)\]",self.filename)[0]
+        except: part=0
+        for curr_message in self.ilist[self.filename]:
+            msg=clean(curr_message["content"])
+            if msg != None:
+                if curr_message["author"]["name"] != last_known_name:
+                    last_known_name=curr_message["author"]["name"]
+                    build+=f"\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}"
+                else:
+                    build+="\\n"+msg
+            else:self.disposed+=1
+            today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
+            if today-last_known_time > self.args.conversation_timeout and last_known_time != 0:
+                if build.startswith("\t"): build=build[1:]
+                if build.startswith("\\n"): build=build[2:]
+                if build.count("\t") > 1 and build != "":
+                    temp.append(build.replace("\n","")+"\n")
+                    self.completed+=1
+                build=""
+                last_known_name=""
+            last_known_time=today
+                
+            self.pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {self.completed} Removed: {self.disposed}')
+            self.pbar.update(1)
+        self.olist.append(temp)
+        print("Exiting " + self.filename)
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -73,7 +116,6 @@ def clean(text, author=None):
     if text != "\\n" and text != " " and text != "" and author==None:
         return text
     elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author!=None:
-        # add code to replace names
         return text
     elif author!=None:
         return gen_name(author)

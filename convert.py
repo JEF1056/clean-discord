@@ -1,5 +1,6 @@
 import io
 import os
+from posix import listdir
 import re
 import sys
 import json
@@ -140,4 +141,4 @@ with io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
             f.write(to_write+"\n")
 
 print(f"Removed {disposed}+{disposed_tox}/{all_messages}, {round((disposed+disposed_tox)/all_messages,2)}%")
-print(f"Dataset final size: {all_messages - disposed - disposed_tox} messages")
+print(f"Dataset final size: {all_messages - disposed - disposed_tox} messages, reduced from {sum([os.path.getsize('data_dir/'+fle) >> 20 for fle in os.listdir(data_dir)])}mb to {os.path.getsize('context-detox.txt') >> 20}mb")

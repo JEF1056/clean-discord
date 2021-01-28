@@ -96,7 +96,7 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
             except: print(curr_message["timestamp"])
             if today-last_known_time > 1800 and last_known_time != 0:
                 if build.startswith("\t"): build=build[1:]
-                if build.startswith("\\n"): build=build[2:]
+                if build.startswith("\\n"): build=clean(last_known_name,author=True)+build[2:]
                 if build.count("\t") > 1 and build != "":
                     f.write(build.replace("\n","")+"\n")
                     completed+=1

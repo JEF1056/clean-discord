@@ -38,7 +38,7 @@ with tqdm(os.listdir(args.dir), desc="Reading files") as pbar:
             all_messages[file]=json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
         else:
             all_messages+=len(json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"])
-        pbar.set_description(f"Found {sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==dict else all_messages} messages")
+        pbar.set_description(f"Found {sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==dict else all_messages} messages, {'storing' if type(all_messages)==dict else 'disposing'}")
    
 try: os.mkdir(args.out)
 except FileExistsError: pass

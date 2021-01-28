@@ -41,10 +41,11 @@ disposed_tox=0
 disposed=0 
 completed=0
 len_all_messages=1
+all_data_files=sorted(os.listdir(args.dir))
 
 if args.step == "clean":
     all_messages={} if args.cache else 0
-    with tqdm(os.listdir(args.dir), desc="Reading files") as pbar:
+    with tqdm(all_data_files, desc="Reading files") as pbar:
         for file in pbar:
             if type(all_messages) == tuple:
                 all_messages[file]=json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
@@ -59,8 +60,11 @@ if args.step == "clean":
     if args. ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
     with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
         last_id="0"
-        for file in len(os.listdir(args.dir)):
+        for file in len(all_data_files):
             file = all_messages[file] if type(all_messages)==tuple else json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
+            title=file.split(" - ")
+            try: part=re.findall(r"\[part (\d)\]",file)[0]
+            except: part=0
             if re.findall(r"\[\d{18,}\]",file)[0] != last_id:
                 last_known_name=""
                 last_known_time=0
@@ -88,15 +92,10 @@ if args.step == "clean":
                         build=""
                         last_known_name=""
                     last_known_time=today
-                        
-                    title=file.split(" - ")
-                    try:
-                        part=re.findall(r"\[part (\d)\]",file)[0]
-                    except:
-                        part=0
                     if not args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
                     pbar.update(1)
                 else: disposed+=1
+            if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
     del all_messages
     if args.ascii: a.close()
 

@@ -68,7 +68,7 @@ if args.step == "clean":
     with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
         last_id="0"
         for file in all_data_files:
-            file = all_messages[file] if type(all_messages)==tuple else json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
+            file_data = all_messages[file] if type(all_messages)==tuple else json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
             title=file.split(" - ")
             try: part=re.findall(r"\[part (\d)\]",file)[0]
             except: part=0
@@ -77,7 +77,7 @@ if args.step == "clean":
                 last_known_time=0
                 build=""
                 last_id=re.findall(r"\[\d{18,}\]",file)[0]
-            for curr_message in all_messages[file]:
+            for curr_message in file_data:
                 if not message["author"]["isBot"]:
                     msg=clean(curr_message["content"])
                     if msg != None:

@@ -53,7 +53,7 @@ class worker(threading.Thread):
                 last_known_name=""
             last_known_time=today
                 
-            self.pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {self.completed} Removed: {self.disposed}')
+            if self.args.workers > 1: self.pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {self.completed} Removed: {self.disposed}')
             self.pbar.update(1)
         self.olist.append(temp)
         print("Exiting " + self.filename)

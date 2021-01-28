@@ -12,3 +12,4 @@ def check_files():
             except: failed.append(f"{file} ||| {last_line}")
 
     assert failed == [], f"Some files in data directory are incomplete downloads:"+"\n".join(failed)
+    return "All files passed."

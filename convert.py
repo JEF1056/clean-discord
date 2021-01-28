@@ -79,7 +79,7 @@ all_messages={}
 with tqdm(os.listdir(data_dir), desc="Reading files") as pbar:
     for file in pbar:
         all_messages[file]=json.load(io.open(f"{data_dir}/{file}", mode="r", encoding="utf-8"))["messages"]
-        pbar.set_description(f"Found {sum([len(msgs) for msgs in all_messages])} messages")
+        pbar.set_description(f"Found {sum([len(all_messages[msgs]) for msgs in all_messages])} messages")
    
 disposed=0 
 completed=0

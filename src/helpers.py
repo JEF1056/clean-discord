@@ -54,6 +54,7 @@ class worker(threading.Thread):
             last_known_time=today
                 
             if self.args.workers == 1: self.pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {self.completed} Removed: {self.disposed}')
+            else: self.pbar.set_description(f"{threading.active_count()} active workers")
             self.pbar.update(1)
         self.olist.append(temp)
         #print("Exiting " + self.filename)

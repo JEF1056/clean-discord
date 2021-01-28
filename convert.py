@@ -64,6 +64,7 @@ with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(o
             
         for t in threads:
             t.join()
+            print(f"Conversations: {completed} Removed: {disposed}")
             
 
 del all_messages

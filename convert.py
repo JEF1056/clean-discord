@@ -84,7 +84,7 @@ if args.nontoxic:
             batch=[]
             for curr_index,conversation in enumerate(pbar):
                 batch.append(conversation)
-                if curr_index==len(to_clean) or sum([len(batch[msgs]) for msgs in batch]) >=args.batches:
+                if curr_index==len(to_clean)-1 or sum([len(batch[msgs]) for msgs in range(len(batch))]) >=args.batches:
                     batch_placement,sents=[],[]
                     for conv in batch:
                         splt=conv.strip().split("\t")

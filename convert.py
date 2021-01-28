@@ -79,7 +79,7 @@ all_messages={}
 with tqdm(os.listdir(data_dir), desc="Reading files") as pbar:
     for file in pbar:
         all_messages[file]=json.load(io.open(f"{data_dir}/{file}", mode="r", encoding="utf-8"))["messages"]
-        pbar.set_description(f"Found {all_messages} messages")
+        pbar.set_description(f"Found {sum([len(msgs) for msgs in all_messages])} messages")
    
 disposed=0 
 completed=0
@@ -120,6 +120,7 @@ with tqdm(total=len(all_messages), desc="Processing messages") as pbar, io.open(
                 part=0
             pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)
+        del all_messages[file]
 
 from tox_block.prediction import make_predictions as detect       
 to_clean=io.open(f"context.txt", mode="r", encoding="utf-8").read().strip().split("\n")

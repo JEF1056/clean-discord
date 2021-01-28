@@ -16,8 +16,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 #print(f'''\n\nFalse:{max(test_neg)}:{test_neg}
 #True:{max(test_pos)}:{test_pos}''')
 
-print()
-
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 names=json.load(io.open("first-names.json", mode="r", encoding="utf-8"))
 replace_names={}
@@ -133,5 +131,5 @@ with io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
             pbar.set_description(f"Batch of {len(sents)}")
             prediction_vals=detect(sents)
             scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
-            to_write="\t".join([sents[i] for i, v in enumerate(scores) if v >= 0.9])
+            to_write="\t".join([sents[i] for i, v in enumerate(scores) if v <= 0.85])
             f.write(to_write+"\n")

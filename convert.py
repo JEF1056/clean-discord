@@ -100,6 +100,7 @@ if args.nontoxic:
                         to_write="\t".join(to_write)
                         f.write(to_write+"\n")
                     pbar.set_description(f"Batch of {len(sents)}, Removed {disposed_tox}")
+                    batch=[]
 
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
 print(f"Dataset final size: {len_all_messages - disposed - disposed_tox} messages, reduced from {sizeof_fmt(sum([os.path.getsize(f'{os.path.join(args.dir,fle)}') >> 20 for fle in os.listdir(args.dir)]))} to {sizeof_fmt(os.path.getsize(os.path.join(args.out,'context-detox.txt'))) if args.nontoxic else sizeof_fmt(os.path.getsize(os.path.join(args.out,'context.txt')))}")

@@ -75,23 +75,23 @@ def clean(text, author=None):
     else:
         return None
 
-all_messages=0
+all_messages={}
 with tqdm(os.listdir(data_dir), desc="Reading files") as pbar:
     for file in pbar:
-        all_messages+=len(json.load(io.open(f"{data_dir}/{file}", mode="r", encoding="utf-8"))["messages"])
+        all_messages[file]=json.load(io.open(f"{data_dir}/{file}", mode="r", encoding="utf-8"))["messages"]
         pbar.set_description(f"Found {all_messages} messages")
    
 disposed=0 
 completed=0
-with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"context.txt", mode="w", encoding="utf-8") as f:
+with tqdm(total=len(all_messages), desc="Processing messages") as pbar, io.open(f"context.txt", mode="w", encoding="utf-8") as f:
     last_id="0"
-    for file in os.listdir(data_dir):
+    for file in all_messages:
         if re.findall(r"\[\d{18,}\]",file)[0] != last_id:
             last_known_name=""
             last_known_time=0
             build=""
             last_id=re.findall(r"\[\d{18,}\]",file)[0]
-        for curr_message in json.load(io.open(f"{data_dir}/{file}", mode="r", encoding="utf-8"))["messages"]:
+        for curr_message in all_messages[file]:
             msg=clean(curr_message["content"])
             if msg != None:
                 if curr_message["author"]["name"] != last_known_name:

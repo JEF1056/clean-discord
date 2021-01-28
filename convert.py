@@ -45,7 +45,7 @@ def clean(text, author=False):
     text= temp
     text= text.replace("\t"," ") #handle tabs
     text= re.sub(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\U00000020]', " ", text) #handle... interesting spaces
-    text="".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
+    text= "".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
     text= re.sub(r'([:.,!?]|\\n) ([:.,!?]|\\n)', r'\1\2', text) #handle extraneous spaces between punctuation    
     text= re.sub(r"[^A-Za-z1-9.!?\"\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+", "",text.strip()) #handle non-emoji, punctuation, and letters
     text= re.sub(r"(?i)([\.a-z])\1{3,}", r"\1\1\1", text.strip()) #handle excessive repeats of letters or ...
@@ -54,17 +54,9 @@ def clean(text, author=False):
     text= re.sub(r'\s([?.!\"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
     
-    try: prediction_vals=list(dict(detect(text)).values())[1:]
-    except: return None
-    if max(prediction_vals) >= 0.9:
-        if author == False: 
-            return None
-        else: 
-            # add code to replace names
-            return "[insertnamehere]"
-    if text != "\\n" and text != " " and author==False:
+    if text != "\\n" and text != " " and text != "" and author==False:
         return text
-    elif text != "\\n" and text != " " and author==True:
+    elif text != "\\n" and text != " " and text != "" and author==True:
         # add code to replace names
         return text
     else:
@@ -115,3 +107,14 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 part=0
             pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)
+            
+"""
+try: prediction_vals=list(dict(detect(text)).values())[1:]
+    except: return None
+    if max(prediction_vals) >= 0.9:
+        if author == False: 
+            return None
+        else: 
+            # add code to replace names
+            return "[insertnamehere]"
+"""

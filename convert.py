@@ -67,7 +67,7 @@ if args.step == "clean":
     if args.ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
     with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
         last_id="0"
-        for file in len(all_data_files):
+        for file in all_data_files:
             file = all_messages[file] if type(all_messages)==tuple else json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
             title=file.split(" - ")
             try: part=re.findall(r"\[part (\d)\]",file)[0]

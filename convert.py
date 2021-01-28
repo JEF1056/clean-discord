@@ -36,7 +36,7 @@ def gen_name(username):
         replace_names[username]=out_name
     return out_name
 
-def clean(text, author=False):
+def clean(text, author=None):
     if "```" in text: return None   
     
     text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)', "", text) #remove urls
@@ -63,13 +63,13 @@ def clean(text, author=False):
     text= re.sub(r'\s([?.!\"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
     
-    if text != "\\n" and text != " " and text != "" and author==False:
+    if text != "\\n" and text != " " and text != "" and author==None:
         return text
-    elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author==True:
+    elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author!=None:
         # add code to replace names
         return text
-    elif author==True:
-        return gen_name(text)
+    elif author!=None:
+        return gen_name(author)
     else:
         return None
 
@@ -94,7 +94,7 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
             if msg != None:
                 if curr_message["author"]["name"] != last_known_name:
                     last_known_name=curr_message["author"]["name"]
-                    build+=f"\t{clean(last_known_name,author=True)}: {msg}"
+                    build+=f"\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}"
                 else:
                     build+="\\n"+msg
             else:disposed+=1

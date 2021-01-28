@@ -78,7 +78,7 @@ if args.step == "clean":
                 build=""
                 last_id=re.findall(r"\[\d{18,}\]",file)[0]
             for curr_message in file_data:
-                if not message["author"]["isBot"]:
+                if not curr_message["author"]["isBot"]:
                     msg=clean(curr_message["content"])
                     if msg != None:
                         if curr_message["author"]["name"] != last_known_name:

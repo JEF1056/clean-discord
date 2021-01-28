@@ -85,8 +85,8 @@ if args.nontoxic:
                 sents=conversation.strip().split("\t")
                 pbar.set_description(f"Batch of {len(sents)}, Removed {disposed_tox}")
                 prediction_vals=detect(sents)
-                print(sents[0])
-                print(prediction_vals[0])
+                print(sents[len(sents)-1])
+                print(prediction_vals[len(sents)-1])
                 scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
                 to_write=[]
                 for i,v in enumerate(scores):

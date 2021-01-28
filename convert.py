@@ -93,7 +93,7 @@ if args.nontoxic:
                     prediction_vals=detect(sents)
                     scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
                     offsets=[sum(batch_placement[0:i]) for i in range(1,len(batch_placement))]
-                    for ind, batch_score in [scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]:
+                    for ind, batch_score in enumerate([scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]):
                         to_write=[]
                         for i,v in enumerate(batch_score):
                             if v <= args.confidence: to_write.append(sents[offsets[ind]+i])

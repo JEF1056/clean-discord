@@ -56,7 +56,7 @@ def clean(text, author=False):
     
     if text != "\\n" and text != " " and text != "" and author==False:
         return text
-    elif text != "\\n" and text != " " and text != "" and author==True:
+    elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author==True:
         # add code to replace names
         return text
     else:

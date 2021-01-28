@@ -109,5 +109,5 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 part=re.findall(r"\[part (\d)\]",file)[0]
             except:
                 part=0
-            pbar.set_description(f'{title[0]} - {title[1]} part {part}, Conversations: {completed} Removed: {disposed}')
+            pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)

@@ -53,7 +53,7 @@ len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type
 with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
     files=os.listdir(args.dir)
     for ind in range(0,len(files), args.workers):
-        for i in range(ind, ind+args.workers):
+        for i in range(ind, ind+args.workers if ind+args.workers < len(os.listdir(args.dir)) else len(os.listdir(args.dir))):
             if type(all_messages)==dict:
                 ilist=all_messages[files[i]]
             else:

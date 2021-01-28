@@ -90,7 +90,7 @@ if args.nontoxic:
                 scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
                 to_write=[]
                 for i,v in enumerate(scores):
-                    if v <= args.toxic: to_write.append(sents[i])
+                    if v <= args.confidence: to_write.append(sents[i])
                     else: disposed_tox+=1
                 to_write="\t".join(to_write)
                 f.write(to_write+"\n")

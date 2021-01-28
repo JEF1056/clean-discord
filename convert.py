@@ -13,8 +13,8 @@ data_dir="data"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 test_neg=list(dict(detect("test")).values())[1:]
 test_pos=list(dict(detect("slut")).values())[1:]
-print(f'''\n\nFalse:{sum(test_neg)/len(test_neg)}:{test_neg}
-True:{sum(test_pos)/len(test_pos)}:{test_pos}''')
+print(f'''\n\nFalse:{max(test_neg)}:{test_neg}
+True:{max(test_pos)}:{test_pos}''')
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
@@ -42,7 +42,7 @@ def clean(text, author=False):
                     temp+= alphabets[0][convi]
                     break
         if convi==None: temp+=char
-    text=temp
+    text= temp
     text= text.replace("\t"," ") #handle tabs
     text= re.sub(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\U00000020]', " ", text) #handle... interesting spaces
     text="".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
@@ -56,7 +56,7 @@ def clean(text, author=False):
     
     try: prediction_vals=list(dict(detect(text)).values())[1:]
     except: return None
-    if sum(prediction_vals)/len(prediction_vals) >= 0.9:
+    if max(prediction_vals) >= 0.9:
         if author == False: 
             return None
         else: 

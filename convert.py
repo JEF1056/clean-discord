@@ -10,7 +10,7 @@ from tox_block.prediction import make_single_prediction as detect
 
 data_dir="data-1"
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '4'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
@@ -96,7 +96,7 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
             if today-last_known_time > 1800 and last_known_time != 0:
                 if build.startswith("\t"): build=build[1:]
                 if build.startswith("\\n"): build=build[2:]
-                if build.count("\t"<1):
+                if build.count("\t")<1:
                     f.write(build+"\n")
                     completed+=1
                 build=""

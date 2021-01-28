@@ -13,8 +13,8 @@ parser.add_argument('-dir', type=str, default="data",
                     help='the data folder containing discord .jsons')
 parser.add_argument('-out', type=str, default="./",
                     help='the folder to output the cleaned files')
-parser.add_argument('-conversation_timeout', type=int, default=1800,
-                    help='amount of time before a conversation is considered dead (in minutes) default is 30 min')
+parser.add_argument('-conversation_timeout', type=int, default=600,
+                    help='amount of time before a conversation is considered dead (in minutes) default is 10 min')
 parser.add_argument('-update_interval', type=int, default=1000,
                     help='TQDM update interval')
 parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True, default=False,
@@ -22,7 +22,9 @@ parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
                     help="turn on cache when reading files (uses a lot of memory)")
 parser.add_argument('-step', type=str, default="clean", choices=["clean", "nontoxic"],
-                    help='TQDM update interval')
+                    help="which step to start on (in case you've already cleaned the data)")
+parser.add_argument("-ascii", type=str2bool, nargs='?', const=True, default=False,
+                    help="create an extra file that includes ascii-only data")
 
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
                     help="use an AI to clean text files")
@@ -54,6 +56,7 @@ if args.step == "clean":
     except FileExistsError: pass
     
     len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages
+    if args. ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
     with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
         last_id="0"
         for file in len(os.listdir(args.dir)):
@@ -80,6 +83,7 @@ if args.step == "clean":
                         if build.startswith("\\n"): build=build[2:]
                         if build.count("\t") > 1 and build != "":
                             f.write(build.replace("\n","")+"\n")
+                            if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")
                             completed+=1
                         build=""
                         last_known_name=""
@@ -94,6 +98,7 @@ if args.step == "clean":
                     pbar.update(1)
                 else: disposed+=1
     del all_messages
+    if args.ascii: a.close()
 
 if args.step == "nontoxic" or args.nontoxic:
     from tox_block.prediction import make_predictions as detect       

@@ -124,12 +124,20 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
 
 from tox_block.prediction import make_predictions as detect       
 to_clean=io.open(f"context.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+disposed_tox=0
 with io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
     with tqdm(to_clean, desc="Processing messages") as pbar:
         for conversation in pbar:
             sents=conversation.strip().split("\t")
-            pbar.set_description(f"Batch of {len(sents)}")
+            pbar.set_description(f"Batch of {len(sents)}, Removed {disposed_tox}")
             prediction_vals=detect(sents)
             scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
-            to_write="\t".join([sents[i] for i, v in enumerate(scores) if v <= 0.85])
+            to_write=[]
+            for i,v in enumerate(scores):
+                if v <= 0.85: to_write.append(sents[i])
+                else: disposed_tox+=1
+            to_write="\t".join(to_write)
             f.write(to_write+"\n")
+
+print(f"Removed {disposed}+{disposed_tox}/{all_messages}, {round((disposed+disposed_tox)/all_messages,2)}%")
+print(f"Dataset final size: {all_messages - disposed - disposed_tox} messages")

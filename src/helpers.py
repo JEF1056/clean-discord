@@ -74,7 +74,7 @@ def clean(text, author=None):
     text= "".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
     text= re.sub(r'([:.,!?@\'\"]|\\n) ([:.,!?\'\"]|\\n)', r'\1\2', text) #handle extraneous spaces between punctuation    
     text= re.sub(r"[^A-Za-z1-9.!@?\"\'\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+", "",text.strip()) #handle non-emoji, punctuation, and letters
-    text= re.sub(r"(?i)([\.\'\"@?!]){3,}\1", r"\1\1\1", text.strip()) #handle excessive repeats of ..., ', ", 
+    text= re.sub(r"(?i)([\.\'\"@?!a-z])\1{3,}", r"\1\1\1", text.strip()) #handle excessive repeats of punctuation, limited to 3
     text= re.sub(r"(?i)\s(.+?)\1+\s", r" \1 ", text.strip()) #handle repeated words
     if author == None: text= re.sub(r'@Deleted User', gen_name, text) #replace "deleted users" with names
     text= re.sub(r"([\s!?@\"\'])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation

@@ -68,7 +68,7 @@ with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(o
         
     for completed_work in olist:
         for line in completed_work:
-            f.write("\n"+line)
+            f.write(line.strip())
             
 
 del all_messages

@@ -75,6 +75,7 @@ with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(o
             pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)
 
+del all_messages
 disposed_tox=0
 if args.nontoxic:
     from tox_block.prediction import make_predictions as detect       

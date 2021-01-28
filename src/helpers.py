@@ -21,8 +21,8 @@ normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á
 class worker(threading.Thread):
     def __init__(self, filename, ilist, olist, pbar, disposed, completed, args):
         threading.Thread.__init__(self)
-        self.ilist = ilist
-        self.olist = olist
+        self.filename, self.ilist, self.olist = filename, ilist, olist
+        self.pbar, self.disposed, self.completed, self.args = pbar, disposed, completed, args
 
     def run(self):
         print("Starting " + self.filename)

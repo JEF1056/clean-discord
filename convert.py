@@ -125,7 +125,8 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
             pbar.update(1)
 
 from tox_block.prediction import make_predictions as detect       
-with io.open(f"context.txt", mode="r", encoding="utf-8").read().strip().split("\n") as to_clean, io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
+to_clean=io.open(f"context.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+with io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
     with tqdm(to_clean, desc="Processing messages") as pbar:
         for conversation in pbar:
             sents=conversation.strip().split("\t")

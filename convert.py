@@ -4,9 +4,10 @@ import re
 import sys
 import json
 import time
+import random
 from tqdm import tqdm
 from datetime import datetime
-from tox_block.prediction import make_single_prediction as detect
+from tox_block.prediction import make_predictions as detect
 
 data_dir="data"
 
@@ -17,6 +18,8 @@ print(f'''\n\nFalse:{max(test_neg)}:{test_neg}
 True:{max(test_pos)}:{test_pos}''')
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+names=json.load(io.open("first-names.json", mode="r", encoding="utf-8"))
+replace_names={}
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
     'Å':'A', 'Æ':'A', 'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E', 'Ì':'I', 'Í':'I', 'Î':'I',
     'Ï':'I', 'Ñ':'N', 'Ń':'N', 'Ò':'O', 'Ó':'O', 'Ô':'O', 'Õ':'O', 'Ö':'O', 'Ø':'O', 'Ù':'U', 'Ú':'U',
@@ -26,9 +29,16 @@ normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á
     'ú':'u', 'û':'u', 'ü':'u', 'ý':'y', 'ý':'y', 'þ':'b', 'ÿ':'y', 'ƒ':'f',
     'ă':'a', 'î':'i', 'â':'a', 'ș':'s', 'ț':'t', 'Ă':'A', 'Î':'I', 'Â':'A', 'Ș':'S', 'Ț':'T',}
 
+def gen_name(username):
+    try: out_name=replace_names[username]
+    except: 
+        out_name=random.choice(names)
+        replace_names[username]=out_name
+    return out_name
+
 def clean(text, author=False):
-    if "```" in text return None   
-     
+    if "```" in text: return None   
+    
     text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)', "", text) #remove urls
     temp=""
     for char in text.strip():
@@ -59,7 +69,7 @@ def clean(text, author=False):
         # add code to replace names
         return text
     elif author==True:
-        return "[insertnamehere]"
+        return gen_name(text)
     else:
         return None
 
@@ -109,13 +119,10 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
             pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)
             
-"""
-try: prediction_vals=list(dict(detect(text)).values())[1:]
-    except: return None
-    if max(prediction_vals) >= 0.9:
-        if author == False: 
-            return None
-        else: 
-            # add code to replace names
-            return "[insertnamehere]"
-"""
+with io.open(f"context.txt", mode="r", encoding="utf-8").read().strip().split("\n") as to_clean, io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
+    with tqdm(to_clean, desc="Processing messages") as pbar:
+        for conversation in pbar:
+            sents=conversation.strip().split("\t")
+            prediction_vals=[max(list(dict(detection).values())[1:]) for detection in detect(sents)]
+            to_write="\t".join([sents[i] for i in prediction_vals if i >= 0.9])
+            f.write(to_write+"\n")

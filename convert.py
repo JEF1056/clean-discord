@@ -8,7 +8,7 @@ from tqdm import tqdm
 from datetime import datetime
 from tox_block.prediction import make_single_prediction as detect
 
-data_dir="data-1"
+data_dir="data"
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -104,5 +104,9 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 
             #CasualConversation - I made this - writers [695705759597723689].json
             title=file.split(" - ")
-            pbar.set_description(f'Processing {title[0]}-{title[1]}, lines {completed} removed:{disposed}')
+            try:
+                part=re.findall(r"\[part (\d)\]",file)[0]
+            except:
+                part=0
+            pbar.set_description(f'{title[0]} - {title[1]} part {part}, Conversations: {completed} Removed: {disposed}')
             pbar.update(1)

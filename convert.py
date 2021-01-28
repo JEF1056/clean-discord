@@ -12,6 +12,12 @@ from tox_block.prediction import make_predictions as detect
 data_dir="data"
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+#test_neg=list(dict(detect(["test"])).values())[1:]
+#test_pos=list(dict(detect(["slut"])).values())[1:]
+#print(f'''\n\nFalse:{max(test_neg)}:{test_neg}
+#True:{max(test_pos)}:{test_pos}''')
+
+print()
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 names=json.load(io.open("first-names.json", mode="r", encoding="utf-8"))

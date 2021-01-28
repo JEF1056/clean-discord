@@ -11,7 +11,10 @@ from tox_block.prediction import make_single_prediction as detect
 data_dir="data"
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-print(f'{detect("test")}\n{detect("slut")}')
+test_neg=list(dict(detect("test")).values())[1:]
+test_pos=list(dict(detect("slut")).values())[1:]
+print(f'''\n\nFalse:{sum(test_neg)/len(test_neg)}:{test_neg}
+      True:{sum(test_pos)/len(test_pos)}:{test_pos}''')
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',

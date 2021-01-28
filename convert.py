@@ -83,7 +83,7 @@ with tqdm(os.listdir(data_dir), desc="Reading files") as pbar:
    
 disposed=0 
 completed=0
-with tqdm(total=len(all_messages), desc="Processing messages") as pbar, io.open(f"context.txt", mode="w", encoding="utf-8") as f:
+with tqdm(total=sum([len(all_messages[msgs]) for msgs in all_messages]), desc="Processing messages") as pbar, io.open(f"context.txt", mode="w", encoding="utf-8") as f:
     last_id="0"
     for file in all_messages:
         if re.findall(r"\[\d{18,}\]",file)[0] != last_id:

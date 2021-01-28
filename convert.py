@@ -130,6 +130,7 @@ with io.open(f"context-detox.txt", mode="w", encoding="utf-8") as f:
     with tqdm(to_clean, desc="Processing messages") as pbar:
         for conversation in pbar:
             sents=conversation.strip().split("\t")
+            print(detect(sents))
             prediction_vals=[max(list(dict(detection).values())[1:]) for detection in detect(sents)]
             to_write="\t".join([sents[i] for i in prediction_vals if i >= 0.9])
             f.write(to_write+"\n")

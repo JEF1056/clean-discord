@@ -7,6 +7,7 @@ import argparse
 from tqdm import tqdm
 from src.helpers import *
 from datetime import datetime
+from src.validate import check_files
 
 parser = argparse.ArgumentParser(description='Clean Discord data')
 parser.add_argument('-dir', type=str, default="data",
@@ -46,7 +47,7 @@ len_all_messages=1
 all_data_files=sorted(os.listdir(args.dir))
 
 if args.step == "clean":
-    import src.validate
+    check_files()
     all_messages={} if args.cache else 0
     with tqdm(all_data_files, desc="Reading files") as pbar:
         for file in pbar:

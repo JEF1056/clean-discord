@@ -11,6 +11,7 @@ from tox_block.prediction import make_single_prediction as detect
 data_dir="data"
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+print(f'{detect("test")}\n{detect("slut")}'')
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
@@ -97,7 +98,7 @@ with tqdm(total=all_messages, desc="Processing messages") as pbar, io.open(f"con
                 if build.startswith("\t"): build=build[1:]
                 if build.startswith("\\n"): build=build[2:]
                 if build.count("\t") > 1 and build != "":
-                    f.write(build+"\n")
+                    f.write(build.replace("\n","")+"\n")
                     completed+=1
                 build=""
             last_known_time=today

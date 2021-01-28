@@ -84,7 +84,7 @@ if args.nontoxic:
                 if curr_index==len(to_clean)-1 or sum([len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
                     batch_placement,sents=[0],[]
                     for conv in batch:
-                        splt=conv.strip().split("\t")
+                        splt=list(filter("",conv.strip().split("\t")))
                         sents.extend(splt)
                         batch_placement.append(len(splt))
                     prediction_vals=detect(sents)

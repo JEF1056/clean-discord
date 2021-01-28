@@ -1,9 +1,6 @@
 import io
 import os
-from posix import listdir
 import re
-import sys
-import json
 import time
 import random
 from tqdm import tqdm
@@ -18,7 +15,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 #True:{max(test_pos)}:{test_pos}''')
 
 alphabets=io.open("alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
-names=json.load(io.open("first-names.json", mode="r", encoding="utf-8"))
+names=io.open("names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 replace_names={}
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
     'Å':'A', 'Æ':'A', 'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E', 'Ì':'I', 'Í':'I', 'Î':'I',

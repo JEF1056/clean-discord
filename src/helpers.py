@@ -4,7 +4,7 @@ import random
 import threading
 import argparse
 import time
-import datetime
+from datetime import datetime
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")

@@ -5,6 +5,7 @@ import argparse
 from math import log
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+bot_prefixes=io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 replace_names={}
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
@@ -51,9 +52,11 @@ def gen_name(username):
     except: return "@"+random.choice(names)
 
 def clean(text, author=None):
-    if "```" in text: return None   
+    if text.count("```") >=2: return None #handle big sections of code
+    for prefix in bot_prefixes:
+        if text.startswith(prefix): return None #handle bot commands
     
-    text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)|\S*@\S*\s?|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}', "", text) #remove urls, emails, and phone numbers
+    text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&=]*)|\S+@\S+|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(.*\n)+```', "", text) #remove urls, emails, code blocks, and phone numbers
     temp=""
     for char in text.strip():
         convi=None

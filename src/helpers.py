@@ -52,9 +52,8 @@ def gen_name(username):
     except: return "@"+random.choice(names)
 
 def clean(text, author=None):
-    if text.count("```") >=2: return None #handle big sections of code
     for prefix in bot_prefixes:
-        if text.startswith(prefix): return None #handle bot commands
+        if text.lower().startswith(prefix): return None #handle bot commands
     
     text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&=]*)|\S+@\S+|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(.*\n)+```', "", text) #remove urls, emails, code blocks, and phone numbers
     temp=""

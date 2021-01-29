@@ -98,7 +98,7 @@ if args.step == "clean":
                             if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")
                             completed+=1
                         else: disposed+=1
-                        if build.startswith("\\n"): print(build)
+                        if "\n" in build: print(build)
                         build=""
                         last_known_name=""
                     last_known_time=today

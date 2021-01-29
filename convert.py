@@ -94,6 +94,7 @@ if args.step == "clean":
                     except: print(curr_message["timestamp"])
                     if today-last_known_time > args.conversation_timeout and last_known_time != 0:
                         build=re.sub(r"^[\t\\n]+","", build.replace("\n","\\n"))
+                        last_known_name=""
                         if len(build.split("\t")) > 1 and build != "":
                             f.write(build+"\n")
                             if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")

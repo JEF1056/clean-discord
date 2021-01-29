@@ -139,4 +139,4 @@ if args.step == "nontoxic" or args.nontoxic:
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
 print(f"Dataset final size: {len_all_messages - disposed - disposed_tox} messages, reduced from "+
       f"{sizeof_fmt(sum([os.path.getsize(f'{os.path.join(args.dir,fle)}') >> 20 for fle in os.listdir(args.dir)]))} to "+
-      f"{sizeof_fmt(os.path.getsize(os.path.join(args.out,'context-detox.txt'))) if args.nontoxic else sizeof_fmt(os.path.getsize(os.path.join(args.out,f'{args.nontoxic_source}-detox.txt')))}")
+      f"{sizeof_fmt(os.path.getsize(os.path.join(args.out,f'{args.nontoxic_source}-detox.txt'))) if args.nontoxic else sizeof_fmt(os.path.getsize(os.path.join(args.out,f'{args.nontoxic_source}-detox.txt')))}")

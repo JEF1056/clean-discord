@@ -47,7 +47,7 @@ len_all_messages=1
 all_data_files=sorted(os.listdir(args.dir))
 
 if args.step == "clean":
-    print(check_files())
+    print(check_files(args.dir))
     all_messages={} if args.cache else 0
     with tqdm(all_data_files, desc="Reading files") as pbar:
         for file in pbar:

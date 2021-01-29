@@ -24,7 +24,7 @@ def check_files(dir, server="None"):
     return "All files passed."
 
 def fix_files(dir, filenames):
-    assert type(filenames)==list
+    assert type(filenames)==list, "inputs must be a list of filenames in the directory"
     for filename in tqdm(filenames, desc="Fixing files"):
         file_data=io.open(os.path.join(dir,filename), mode="r", encoding="utf-8").read()+"]}"
         file_data = json.loads(file_data)

@@ -82,19 +82,17 @@ if args.step == "clean":
                 last_id=re.findall(r"\[\d{18,}\]",file)[0]
             for curr_message in file_data:
                 if not curr_message["author"]["isBot"]:
+                    today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
                     msg=clean(curr_message["content"])
                     if msg != None:
-                        if curr_message["author"]["name"] != last_known_name:
+                        if curr_message["author"]["name"] != last_known_name and today-last_known_time > args.conversation_timeout:
                             last_known_name=curr_message["author"]["name"]
                             build+=f"\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}"
                         else:
                             build+="\\n"+msg
                     else:disposed+=1
-                    try: today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
-                    except: print(curr_message["timestamp"])
                     if today-last_known_time > args.conversation_timeout and last_known_time != 0:
                         build=re.sub(r"^[\t\\n]+","", build.replace("\n","\\n"))
-                        last_known_name=""
                         if len(build.split("\t")) > 1 and build != "":
                             f.write(build+"\n")
                             if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")

@@ -29,7 +29,7 @@ parser.add_argument('-step', type=str, default="clean", choices=["clean", "nonto
 parser.add_argument("-ascii", type=str2bool, nargs='?', const=True, default=False,
                     help="create an extra file that includes ascii-only data")
 parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=False,
-                    help="takes into account discord's new replies feature to create a file fo only sentence pairs")
+                    help="takes into account discord's new replies feature to create a file of only sentence pairs (data yeilds will be low)")
 
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
                     help="use an AI to clean text files")

@@ -97,6 +97,7 @@ if args.step == "clean":
                             f.write(build+"\n")
                             if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")
                             completed+=1
+                        else: print(build)
                         build=""
                         last_known_name=""
                     last_known_time=today
@@ -137,7 +138,7 @@ if args.step == "nontoxic" or args.nontoxic:
                     batch=[]
 
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
-final_file_path=os.path.join(args.out,f'{args.nontoxic_source}{"-detox.txt" if args.nontoxic else ""}')
+final_file_path=os.path.join(args.out,f'{args.nontoxic_source}{"-detox" if args.nontoxic else ""}.txt')
 print(f"Dataset final size: {len_all_messages - disposed - disposed_tox} messages, reduced from "+
       f"{sizeof_fmt(sum([os.path.getsize(f'{os.path.join(args.dir,fle)}') for fle in os.listdir(args.dir)]))} to "+
       f"{sizeof_fmt(os.path.getsize(os.path.join(args.out,f'{args.nontoxic_source}-detox.txt'))) if args.nontoxic else sizeof_fmt(os.path.getsize(final_file_path))}")

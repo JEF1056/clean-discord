@@ -19,7 +19,7 @@ parser.add_argument('-conversation_timeout', type=int, default=600,
 parser.add_argument('-update_interval', type=int, default=1000,
                     help='TQDM update interval')
 parser.add_argument('-min_messages', type=int, default=2,
-                    help='TQDM update interval')
+                    help='override the minimum number of messages that form a conversation')
 parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True, default=False,
                     help="disable TQDM description")
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
@@ -107,7 +107,7 @@ if args.step == "clean":
                     else:disposed+=1
                     if today-last_known_time > args.conversation_timeout and last_known_time != 0:
                         build=re.sub(r"^[\t\\n]+","", build.replace("\n","\\n"))
-                        if len(build.split("\t")) > 1 and build != "":
+                        if len(build.split("\t")) >= args.min_messages and build != "":
                             f.write(build+"\n")
                             if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")
                             completed+=1
@@ -146,7 +146,7 @@ if args.step == "nontoxic" or args.nontoxic:
                             if v <= args.confidence: to_write.append(sents[offsets[ind]+i].replace("\n","\\n"))
                             else: disposed_tox+=1
                         if to_write[0].startswith("\\n"): to_write=to_write[1:]
-                        if len(to_write) < 2: 
+                        if len(to_write) < args.min_messages: 
                             disposed+=len(to_write)
                         else:
                             to_write="\t".join(to_write)

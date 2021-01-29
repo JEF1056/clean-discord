@@ -81,7 +81,7 @@ if args.step == "clean":
             try: part=re.findall(r"\[part (\d)\]",file)[0]
             except: part=1
             if args.pairs: #generate a dict of messages and their index in messages
-                message_indexes={msgdata["id"]:loc for loc, msgdata in file_data}
+                message_indexes={msgdata["id"]:loc for loc, msgdata in enumerate(file_data)}
             if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             if re.findall(r"\[\d{18,}\]",file)[0] != last_id:
                 last_known_name=""

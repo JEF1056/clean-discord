@@ -130,6 +130,7 @@ if args.step == "nontoxic" or args.nontoxic:
                         for i,v in enumerate(batch_score):
                             if v <= args.confidence: to_write.append(sents[offsets[ind]+i].replace("\n","\\n"))
                             else: disposed_tox+=1
+                        if to_write[0].startswith("\\n"): to_write=to_write[1:]
                         if len(to_write) < 2: 
                             disposed+=len(to_write)
                         else:

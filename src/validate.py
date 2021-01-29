@@ -15,4 +15,4 @@ def check_files(server="None"):
     assert failed == [], f"Some files in data directory are incomplete downloads:"+"\n".join(failed)
     return "All files passed."
 
-print(check_files(server="a crumb"))
+#print(check_files(server="a crumb"))

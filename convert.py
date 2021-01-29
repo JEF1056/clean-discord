@@ -85,7 +85,7 @@ if args.step == "clean":
                     today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
                     msg=clean(curr_message["content"])
                     if msg != None:
-                        if curr_message["author"]["name"] != last_known_name or today-last_known_time > args.conversation_timeout:
+                        if curr_message["author"]["name"] != last_known_name or build=="":
                             last_known_name=curr_message["author"]["name"]
                             build+=f"\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}"
                         else:

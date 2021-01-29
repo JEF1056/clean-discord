@@ -93,7 +93,7 @@ if args.step == "clean":
                     try: today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
                     except: print(curr_message["timestamp"])
                     if today-last_known_time > args.conversation_timeout and last_known_time != 0:
-                        build=re.sub(r"^[\t\\n]+","", build.replace("\n",""))
+                        build=re.sub(r"^[\t\\n]+","", build.replace("\n","\\n"))
                         if len(build.split("\t")) > 1 and build != "":
                             f.write(build+"\n")
                             if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")
@@ -120,7 +120,7 @@ if args.step == "nontoxic" or args.nontoxic:
                     batch_placement,sents=[0],[]
                     for conv in batch:
                         splt=[e for e in conv.strip().split("\t") if e != ""]
-                        sents.extend(splt) #not sure currently if the tox-block model is affected by "\\n", experiment?
+                        sents.extend([remove.replace("\\n","\n").strip() for remove in splt]) #not sure currently if the tox-block model is affected by "\\n", experiment?
                         batch_placement.append(len(splt))
                     prediction_vals=detect(sents)
                     scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
@@ -128,7 +128,7 @@ if args.step == "nontoxic" or args.nontoxic:
                     for ind, batch_score in enumerate([scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]):
                         to_write=[]
                         for i,v in enumerate(batch_score):
-                            if v <= args.confidence: to_write.append(sents[offsets[ind]+i])
+                            if v <= args.confidence: to_write.append(sents[offsets[ind]+i].replace("\n","\\n"))
                             else: disposed_tox+=1
                         if len(to_write) < 2: disposed+=len(to_write)
                         else:

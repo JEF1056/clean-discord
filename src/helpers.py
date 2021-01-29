@@ -47,7 +47,7 @@ def clean(text, author=None):
     for prefix in bot_prefixes:
         if text.lower().startswith(prefix): return None #handle bot commands
     
-    text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|\S+@\S+|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(.*\n)+```|:[^:\s]*(?:::[^:\s]*)*:', "", text) #remove urls, emails, code blocks, custom emojis, and phone numbers
+    text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|\S+@\S+|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(.*\n)+```|:[^:\s]*(?:::[^:\s]*)*:|\\n', "", text) #remove urls, emails, code blocks, custom emojis, and phone numbers
     temp=""
     for char in text.strip():
         convi=None

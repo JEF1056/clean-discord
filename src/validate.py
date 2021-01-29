@@ -3,7 +3,7 @@ import io
 import json
 from tqdm import tqdm
 
-def check_files(dir, server="None"):
+def check_files(dir, server=""):
     failed, num_processed=[],0
     for file in os.listdir(dir):
         if file.startswith(server) or server=="":

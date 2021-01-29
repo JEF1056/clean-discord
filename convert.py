@@ -97,7 +97,7 @@ if args.step == "clean":
                         source_author=clean(file_data[message_indexes[source]]["author"]["name"], author=file_data[message_indexes[source]]["author"]["id"])
                         source_msg=clean(file_data[message_indexes[source]]["content"])
                         p.write(f"{source_author}: {source_msg}\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}\n")
-                    except pass
+                    except: pass
                     if msg != None:
                         if curr_message["author"]["name"] != last_known_name or build=="":
                             last_known_name=curr_message["author"]["name"]

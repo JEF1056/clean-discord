@@ -93,10 +93,9 @@ if args.step == "clean":
                     try: today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
                     except: print(curr_message["timestamp"])
                     if today-last_known_time > args.conversation_timeout and last_known_time != 0:
-                        if build.startswith("\t"): build=build[1:]
-                        if build.startswith("\\n"): build=build[2:]
+                        build=re.sub(r"^\t|^\\n","", build.replace("\n",""))
                         if build.count("\t") > 1 and build != "":
-                            f.write(build.replace("\n","")+"\n")
+                            f.write(build+"\n")
                             if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")
                             completed+=1
                         build=""

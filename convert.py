@@ -18,6 +18,8 @@ parser.add_argument('-conversation_timeout', type=int, default=600,
                     help='amount of time before a conversation is considered dead (in minutes) default is 10 min')
 parser.add_argument('-update_interval', type=int, default=1000,
                     help='TQDM update interval')
+parser.add_argument('-min_messages', type=int, default=2,
+                    help='TQDM update interval')
 parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True, default=False,
                     help="disable TQDM description")
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
@@ -26,6 +28,8 @@ parser.add_argument('-step', type=str, default="clean", choices=["clean", "nonto
                     help="which step to start on (in case you've already cleaned the data)")
 parser.add_argument("-ascii", type=str2bool, nargs='?', const=True, default=False,
                     help="create an extra file that includes ascii-only data")
+parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=False,
+                    help="takes into account discord's new replies feature to create a file fo only sentence pairs")
 
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
                     help="use an AI to clean text files")
@@ -45,6 +49,7 @@ disposed=0
 completed=0
 len_all_messages=1
 all_data_files=sorted(os.listdir(args.dir))
+if args.pairs: assert args.min_messages == 2
 
 if args.step == "clean":
     print(check_files(args.dir))
@@ -67,6 +72,7 @@ if args.step == "clean":
     
     len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages
     if args.ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
+    if args.pairs: p=io.open(os.path.join(args.out,"context-pairs.txt"), mode="w", encoding="utf-8")
     with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
         last_id="0"
         for file in all_data_files:
@@ -74,6 +80,8 @@ if args.step == "clean":
             title=file.split(" - ")
             try: part=re.findall(r"\[part (\d)\]",file)[0]
             except: part=1
+            if args.pairs: #generate a dict of messages and their index in messages
+                message_indexes={msgdata["id"]:loc for loc, msgdata in file_data}
             if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
             if re.findall(r"\[\d{18,}\]",file)[0] != last_id:
                 last_known_name=""
@@ -84,6 +92,12 @@ if args.step == "clean":
                 if not curr_message["author"]["isBot"]:
                     today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
                     msg=clean(curr_message["content"])
+                    try:
+                        source=curr_message["reference"]["messageId"]
+                        source_author=clean(file_data[message_indexes[source]]["author"]["name"], author=file_data[message_indexes[source]]["author"]["id"])
+                        source_msg=clean(file_data[message_indexes[source]]["content"])
+                        p.write(f"{source_author}: {source_msg}\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}\n")
+                    except Exception as e: print(e)
                     if msg != None:
                         if curr_message["author"]["name"] != last_known_name or build=="":
                             last_known_name=curr_message["author"]["name"]
@@ -107,6 +121,7 @@ if args.step == "clean":
             if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
     del all_messages
     if args.ascii: a.close()
+    if args.pairs: p.close()
 
 if args.step == "nontoxic" or args.nontoxic:
     from tox_block.prediction import make_predictions as detect       

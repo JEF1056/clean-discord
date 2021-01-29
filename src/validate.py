@@ -7,7 +7,7 @@ def check_files(dir, server=""):
     failed, num_processed=[],0
     for file in os.listdir(dir):
         if file.startswith(server) or server=="":
-            with open(os.path.join("data",file), 'rb') as f:
+            with open(os.path.join(dir,file), 'rb') as f:
                 f.seek(-2, os.SEEK_END)
                 while f.read(1) != b' ':
                     f.seek(-2, os.SEEK_CUR)

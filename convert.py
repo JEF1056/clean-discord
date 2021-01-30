@@ -136,7 +136,7 @@ if args.step == "nontoxic" or args.nontoxic:
                 if curr_index==len(to_clean)-1 or sum([len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
                     batch_placement,sents=[0],[]
                     for conv in batch:
-                        splt=[e for e in conv.strip().split("\t") if e != "" and e != " "]
+                        splt= list(filter(None, conv.strip().split("\t")))
                         sents.extend([remove.replace("\\n","\n").strip() for remove in splt]) #not sure currently if the tox-block model is affected by "\\n", experiment?
                         batch_placement.append(len(splt))
                     prediction_vals=detect(sents)

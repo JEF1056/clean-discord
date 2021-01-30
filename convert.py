@@ -238,35 +238,29 @@ if args.step == "nontoxic" or args.nontoxic:
                         [len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
                     batch_placement, sents = [0], []
                     for conv in batch:
-                        splt = [e for e in conv.strip().split("\t") if e != "" and e != " "]
-                        sents.extend([remove.replace("\\n", "\n").strip() for remove in
-                                      splt])  # not sure currently if the tox-block model is affected by "\\n", experiment?
+                        splt= list(filter(None, conv.strip().split("\t")))
+                        sents.extend(list(filter(None, [remove.replace("\\n","\n").strip() for remove in splt]))) #not sure currently if the tox-block model is affected by "\\n", experiment?
                         batch_placement.append(len(splt))
-                    prediction_vals = detect(sents)
-                    scores = [max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
-                    offsets = [sum(batch_placement[0:i]) for i in range(1, len(batch_placement))]
-                    for ind, batch_score in enumerate(
-                            [scores[sum(batch_placement[0:i]):sum(batch_placement[0:i]) + batch_placement[i]] for i in
-                             range(1, len(batch_placement))]):
-                        to_write = []
-                        for i, v in enumerate(batch_score):
-                            if v <= args.confidence:
-                                to_write.append(sents[offsets[ind] + i].replace("\n", "\\n"))
+                    prediction_vals=detect(sents)
+                    scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
+                    offsets=[sum(batch_placement[0:i]) for i in range(1,len(batch_placement))]
+                    for ind, batch_score in enumerate([scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]):
+                        to_write=[]
+                        for i,v in enumerate(batch_score):
+                            if v <= args.confidence: to_write.append(sents[offsets[ind]+i].replace("\n","\\n"))
+                            else: disposed_tox+=1
+                        if to_write != []:
+                            if to_write[0].startswith("\\n"): to_write=to_write[1:]
+                            if len(to_write) < args.min_messages: 
+                                disposed+=len(to_write)
                             else:
-                                disposed_tox += 1
-                        if to_write[0].startswith("\\n"): to_write = to_write[1:]
-                        if len(to_write) < args.min_messages:
-                            disposed += len(to_write)
-                        else:
-                            to_write = "\t".join(to_write)
-                            f.write(to_write + "\n")
-                    pbar.set_description(
-                        f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")
-                    batch = []
+                                to_write="\t".join(to_write)
+                                f.write(to_write+"\n")
+                    pbar.set_description(f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")
+                    batch=[]
 
-print(
-    f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed + disposed_tox) / len_all_messages, 2)}%")
-final_file_path = os.path.join(args.out, f'{args.nontoxic_source}{"-detox" if args.nontoxic else ""}.txt')
-print(f"Dataset final size: {len_all_messages - disposed - disposed_tox} messages, reduced from " +
-      f"{sizeof_fmt(sum([os.path.getsize(f'{os.path.join(args.dir, fle)}') for fle in os.listdir(args.dir)]))} to " +
-      f"{sizeof_fmt(os.path.getsize(os.path.join(args.out, f'{args.nontoxic_source}-detox.txt'))) if args.nontoxic else sizeof_fmt(os.path.getsize(final_file_path))}")
+print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
+final_file_path=os.path.join(args.out,f'{args.nontoxic_source}{"-detox" if args.nontoxic else ""}.txt')
+print(f"Dataset final size: {len_all_messages - disposed - disposed_tox} messages, reduced from "+
+      f"{sizeof_fmt(sum([os.path.getsize(f'{os.path.join(args.dir,fle)}') for fle in os.listdir(args.dir)]))} to "+
+      f"{sizeof_fmt(os.path.getsize(os.path.join(args.out,f'{args.nontoxic_source}-detox.txt'))) if args.nontoxic else sizeof_fmt(os.path.getsize(final_file_path))}")

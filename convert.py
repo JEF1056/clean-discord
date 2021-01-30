@@ -51,7 +51,7 @@ len_all_messages=1
 all_data_files=sorted(os.listdir(args.dir))
 if args.pairs: assert args.min_messages == 2
 
-if args.step == "clean":
+if (args.cache==False and args.step == "nontoxic") or args.step == "clean":
     print(check_files(args.dir))
     all_messages={} if args.cache else 0
     with tqdm(all_data_files, desc="Reading files") as pbar:
@@ -69,7 +69,8 @@ if args.step == "clean":
     
     try: os.mkdir(args.out)
     except FileExistsError: pass
-    
+
+if args.step == "clean":
     len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages
     if args.ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
     if args.pairs: p=io.open(os.path.join(args.out,"context-pairs.txt"), mode="w", encoding="utf-8")

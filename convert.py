@@ -147,12 +147,13 @@ if args.step == "nontoxic" or args.nontoxic:
                         for i,v in enumerate(batch_score):
                             if v <= args.confidence: to_write.append(sents[offsets[ind]+i].replace("\n","\\n"))
                             else: disposed_tox+=1
-                        if to_write[0].startswith("\\n"): to_write=to_write[1:]
-                        if len(to_write) < args.min_messages: 
-                            disposed+=len(to_write)
-                        else:
-                            to_write="\t".join(to_write)
-                            f.write(to_write+"\n")
+                        if to_write != []:
+                            if to_write[0].startswith("\\n"): to_write=to_write[1:]
+                            if len(to_write) < args.min_messages: 
+                                disposed+=len(to_write)
+                            else:
+                                to_write="\t".join(to_write)
+                                f.write(to_write+"\n")
                     pbar.set_description(f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")
                     batch=[]
 

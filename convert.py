@@ -44,6 +44,7 @@ args = parser.parse_args()
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+#these are primarily statistics and the sort
 disposed_tox=0
 disposed=0 
 completed=0
@@ -51,6 +52,8 @@ len_all_messages=1
 all_data_files=sorted(os.listdir(args.dir))
 if args.pairs: assert args.min_messages == 2
 
+#this if statement encapsulates the code used to load the total number of messages into memory
+#this is either by the means of reading each file backward and checking for the messagescount field or just brute-force caching them into memory
 if (args.cache==False and args.step == "nontoxic") or args.step == "clean":
     print(check_files(args.dir))
     all_messages={} if args.cache else 0
@@ -70,59 +73,61 @@ if (args.cache==False and args.step == "nontoxic") or args.step == "clean":
     try: os.mkdir(args.out)
     except FileExistsError: pass
 
+#NOTE: NEED TO MULTITHREAD
 if args.step == "clean":
-    len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages
-    if args.ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8")
-    if args.pairs: p=io.open(os.path.join(args.out,"context-pairs.txt"), mode="w", encoding="utf-8")
-    with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f:
+    len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages #this is to determine the length of tqdm's progress bar
+    if args.ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8") #this (and the line below it) opens extra files for different arguments that have been passed
+    if args.pairs: p=io.open(os.path.join(args.out,"context-pairs.txt"), mode="w", encoding="utf-8") #i don't think that you need to multithread these, unless there is a way to do that
+    with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f: #initializes tqdm and the primary file to write to
         last_id="0"
-        for file in all_data_files:
-            file_data = all_messages[file] if type(all_messages)==tuple else json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"]
-            title=file.split(" - ")
+        for file in all_data_files: # loop through each file containing messages
+            file_data = all_messages[file] if type(all_messages)==tuple else json.load(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8"))["messages"] #load the file or if cached, full it from memory
+            title=file.split(" - ")  #this and the next two lines parse th name of the file to reduce its length in the tqdm progressbar
             try: part=re.findall(r"\[part (\d)\]",file)[0]
             except: part=1
             if args.pairs: #generate a dict of messages and their index in messages
                 message_indexes={msgdata["id"]:loc for loc, msgdata in enumerate(file_data)}
-            if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
-            if re.findall(r"\[\d{18,}\]",file)[0] != last_id:
+            if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}') #this just reduces the number of updates to the progressbar from every time to just before and after a file
+            if re.findall(r"\[\d{18,}\]",file)[0] != last_id: #checks if we're on a new server, and if we are, reset the locality variables
                 last_known_name=""
                 last_known_time=0
                 build=""
                 last_id=re.findall(r"\[\d{18,}\]",file)[0]
-            for curr_message in file_data:
-                if not curr_message["author"]["isBot"]:
-                    today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple())
-                    msg=clean(curr_message["content"])
-                    try:
-                        source=curr_message["reference"]["messageId"]
-                        source_author=clean(file_data[message_indexes[source]]["author"]["name"], author=file_data[message_indexes[source]]["author"]["id"])
-                        source_msg=clean(file_data[message_indexes[source]]["content"])
-                        if source_msg != None and msg != None:
-                            p.write(f"{source_author}: {source_msg}\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}\n")
-                    except: pass
+            for curr_message in file_data: #loop through the messages
+                if not curr_message["author"]["isBot"]: #ignore bots
+                    today=time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00",""), "%Y-%m-%dT%H:%M:%S").timetuple()) # time is formatted in a specific way, we need to convert it to a unix timestamp
+                    msg=clean(curr_message["content"]) #clean the message
+                    if args.pairs:
+                        try: #check if the message has a reply attached. if so, add it to the pairs
+                            source=curr_message["reference"]["messageId"]
+                            source_author=clean(file_data[message_indexes[source]]["author"]["name"], author=file_data[message_indexes[source]]["author"]["id"])
+                            source_msg=clean(file_data[message_indexes[source]]["content"])
+                            if source_msg != None and msg != None: #make sure the messages after being cleaned are not empty
+                                p.write(f"{source_author}: {source_msg}\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}\n") #write files instead of storing them to save memory
+                        except: pass
                     if msg != None:
-                        if curr_message["author"]["name"] != last_known_name or build=="":
+                        if curr_message["author"]["name"] != last_known_name or build=="": #check if the author of the last message is also the author of this message
                             last_known_name=curr_message["author"]["name"]
-                            build+=f"\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}"
+                            build+=f"\t{clean(last_known_name,author=curr_message['author']['id'])}: {msg}" #if not, include the author's name
                         else:
-                            build+="\\n"+msg
+                            build+="\\n"+msg # if so, add to the last message
                     else:disposed+=1
-                    if today-last_known_time > args.conversation_timeout and last_known_time != 0:
-                        build=re.sub(r"^[\t\\n]+","", build.replace("\n","\\n"))
-                        if len(build.split("\t")) >= args.min_messages and build != "":
-                            f.write(build+"\n")
-                            if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n")
+                    if today-last_known_time > args.conversation_timeout and last_known_time != 0: # if not the first message and 10 minutes have elapsed form the last message
+                        build=re.sub(r"^[\t\\n]+","", build.replace("\n","\\n")) # remove leading \n and \t if there are any
+                        if len(build.split("\t")) >= args.min_messages and build != "": #check if the number of messages in the conversation is >2
+                            f.write(build+"\n") #write the conversation
+                            if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n") #write the line but ascii-encoded
                             completed+=1
                         else: disposed+=1
-                        build=""
+                        build="" #reset the last known people
                         last_known_name=""
-                    last_known_time=today
+                    last_known_time=today#save the time of the curent message
                     if not args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
-                    pbar.update(1)
+                    pbar.update(1) #really, really should optimize this
                 else: disposed+=1
             if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
     del all_messages
-    if args.ascii: a.close()
+    if args.ascii: a.close() #close the files
     if args.pairs: p.close()
 
 if args.step == "nontoxic" or args.nontoxic:

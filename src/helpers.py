@@ -76,7 +76,7 @@ def clean(text, author=None):
         return text
     elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author!=None:
         # add code to replace names
-        return text
+        return text.split(" ")[-1]
     elif author!=None:
         return gen_name(author)
     else:

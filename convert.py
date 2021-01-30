@@ -137,7 +137,7 @@ if args.step == "nontoxic" or args.nontoxic:
                     batch_placement,sents=[0],[]
                     for conv in batch:
                         splt= list(filter(None, conv.strip().split("\t")))
-                        sents.extend([remove.replace("\\n","\n").strip() for remove in splt]) #not sure currently if the tox-block model is affected by "\\n", experiment?
+                        sents.extend(list(filter(None, [remove.replace("\\n","\n").strip() for remove in splt]))) #not sure currently if the tox-block model is affected by "\\n", experiment?
                         batch_placement.append(len(splt))
                     prediction_vals=detect(sents)
                     scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]

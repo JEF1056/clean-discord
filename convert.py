@@ -33,7 +33,7 @@ parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=Fals
 
 parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
                     help="use an AI to clean text files")
-parser.add_argument('-nontoxic_source', type=str, default="context", choices=["context", "context-ascii"],
+parser.add_argument('-nontoxic_source', type=str, default="context", choices=["context", "context-ascii", "context-pairs"],
                     help="clean ascii or non-ascii context")
 parser.add_argument("-batches", type=int, default=100,
                     help="minimum number of batches to feed the AI (only needed if -nontoxic is used)")
@@ -127,7 +127,8 @@ if args.step == "clean":
 if args.step == "nontoxic" or args.nontoxic:
     from tox_block.prediction import make_predictions as detect       
     to_clean=io.open(os.path.join(args.out,f"{args.nontoxic_source}.txt"), mode="r", encoding="utf-8").read().strip().split("\n")
-    with io.open(os.path.join(args.out,f"{args.nontoxic_source}-detox.txt"), mode="w", encoding="utf-8") as f:
+    if args.ascii: a=io.open(os.path.join(args.out,"context-ascii-detox.txt"), mode="w", encoding="utf-8")
+    with io.open(os.path.join(args.out,"context-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc="Processing messages") as pbar:
             batch=[]
             for curr_index,conversation in enumerate(pbar):
@@ -152,8 +153,10 @@ if args.step == "nontoxic" or args.nontoxic:
                         else:
                             to_write="\t".join(to_write)
                             f.write(to_write+"\n")
+                            if args.ascii: a.write(to_write.replace("\n","").encode("ascii", "ignore").decode()+"\n")
                     pbar.set_description(f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")
                     batch=[]
+    if args.ascii: a.close()
 
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
 final_file_path=os.path.join(args.out,f'{args.nontoxic_source}{"-detox" if args.nontoxic else ""}.txt')

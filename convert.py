@@ -26,8 +26,6 @@ parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=Fals
                     help="turn on cache when reading files (uses a lot of memory)")
 parser.add_argument('-step', type=str, default="clean", choices=["clean", "nontoxic"],
                     help="which step to start on (in case you've already cleaned the data)")
-parser.add_argument("-ascii", type=str2bool, nargs='?', const=True, default=False,
-                    help="create an extra file that includes ascii-only data")
 parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=False,
                     help="takes into account discord's new replies feature to create a file of only sentence pairs (data yeilds will be low)")
 
@@ -76,7 +74,6 @@ if (args.cache==False and args.step == "nontoxic") or args.step == "clean":
 #NOTE: NEED TO MULTITHREAD
 if args.step == "clean":
     len_all_messages=sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages)==tuple else all_messages #this is to determine the length of tqdm's progress bar
-    if args.ascii: a=io.open(os.path.join(args.out,"context-ascii.txt"), mode="w", encoding="utf-8") #this (and the line below it) opens extra files for different arguments that have been passed
     if args.pairs: p=io.open(os.path.join(args.out,"context-pairs.txt"), mode="w", encoding="utf-8") #i don't think that you need to multithread these, unless there is a way to do that
     with tqdm(total=len_all_messages, desc="Processing messages") as pbar, io.open(os.path.join(args.out,"context.txt"), mode="w", encoding="utf-8") as f: #initializes tqdm and the primary file to write to
         last_id="0"
@@ -116,7 +113,6 @@ if args.step == "clean":
                         build=re.sub(r"^[\t\\n]+","", build.replace("\n","\\n")) # remove leading \n and \t if there are any
                         if len(build.split("\t")) >= args.min_messages and build != "": #check if the number of messages in the conversation is >2
                             f.write(build+"\n") #write the conversation
-                            if args.ascii: a.write(build.replace("\n","").encode("ascii", "ignore").decode()+"\n") #write the line but ascii-encoded
                             completed+=1
                         else: disposed+=1
                         build="" #reset the last known people
@@ -127,13 +123,11 @@ if args.step == "clean":
                 else: disposed+=1
             if args.disable_description: pbar.set_description(f'{title[0]} - {title[1]} - Part {part}, Conversations: {completed} Removed: {disposed}')
     del all_messages
-    if args.ascii: a.close() #close the files
-    if args.pairs: p.close()
+    if args.pairs: p.close()#close the files
 
 if args.step == "nontoxic" or args.nontoxic:
     from tox_block.prediction import make_predictions as detect       
     to_clean=io.open(os.path.join(args.out,f"{args.nontoxic_source}.txt"), mode="r", encoding="utf-8").read().strip().split("\n")
-    if args.ascii: a=io.open(os.path.join(args.out,"context-ascii-detox.txt"), mode="w", encoding="utf-8")
     with io.open(os.path.join(args.out,"context-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc="Processing messages") as pbar:
             batch=[]
@@ -159,10 +153,8 @@ if args.step == "nontoxic" or args.nontoxic:
                         else:
                             to_write="\t".join(to_write)
                             f.write(to_write+"\n")
-                            if args.ascii: a.write(to_write.replace("\n","").encode("ascii", "ignore").decode()+"\n")
                     pbar.set_description(f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")
                     batch=[]
-    if args.ascii: a.close()
 
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
 final_file_path=os.path.join(args.out,f'{args.nontoxic_source}{"-detox" if args.nontoxic else ""}.txt')

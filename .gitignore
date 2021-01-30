@@ -247,4 +247,5 @@ dmypy.json
 !.vscode/extensions.json
 *.code-workspace
 
+data
 # End of https://www.toptal.com/developers/gitignore/api/jetbrains+all,python,vscode

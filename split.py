@@ -3,6 +3,7 @@ import os
 from tqdm import tqdm
 import argparse
 import numpy as np
+from src.helpers import str2bool as s2b
 
 parser = argparse.ArgumentParser(description='Clean Discord data')
 parser.add_argument('-dir', type=str, default="data",
@@ -15,6 +16,8 @@ parser.add_argument('-chunks', type=int, default=20,
                     help='max length of the dataset')
 parser.add_argument('-max_len', type=int, default=2048,
                     help='max length of the dataset')
+parser.add_argument("-ascii", type=s2b, nargs='?', const=True, default=False,
+                    help="debugging flag")
 args = parser.parse_args()
 
 def chunks(lst, n):
@@ -38,13 +41,17 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
     for line in tqdm(train): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
-            t.write(bld+"\t"+dta+"\n")
+            ln=bld+"\t"+dta.split(": ")[1]+"\n"
+            if args.ascii: ln=ln.encode("ascii", "ignore").decode()
+            t.write(ln)
             bld+="\\b"+dta
             if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
 
     for line in tqdm(val): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
-            v.write(bld+"\t"+dta+"\n")
+            ln=bld+"\t"+dta.split(": ")[1]+"\n"
+            if args.ascii: ln=ln.encode("ascii", "ignore").decode()
+            v.write(ln)
             bld+="\\b"+dta
             if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break

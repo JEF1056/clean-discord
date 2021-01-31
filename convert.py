@@ -220,7 +220,7 @@ if args.step == "clean":
         for i, th in enumerate(threads):
             print(f"Joining thread {i+1}/{len(threads)}, waiting for end...", end=" ")
             th.join()
-            print(f"Done in {t1-time.time()} seconds")
+            print(f"Done in {round(time.time()-t1, 2)} seconds")
 
     del all_messages
 

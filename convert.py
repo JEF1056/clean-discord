@@ -39,8 +39,8 @@ parser.add_argument("-nontoxic", type=str, default="fast", choices=["fast", "slo
 parser.add_argument("-censor", type=str, default="remove", choices=["remove", "censor", None],
                     help="censor sentences instead of removing them")
 parser.add_argument('-nontoxic_source', type=str, default="context",
-                    choices=["context", "context-ascii", "context-pairs"],
-                    help="clean ascii or non-ascii context")
+                    choices=["context", "context-pairs"],
+                    help="clean base or pairs context")
 parser.add_argument("-batches", type=int, default=100,
                     help="minimum number of batches to feed the AI (only needed if -nontoxic is used)")
 parser.add_argument("-confidence", type=float, default=0.85,

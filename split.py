@@ -41,17 +41,21 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
     for line in tqdm(train): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
-            ln=bld+"\t"+dta.split(": ")[1]+"\n"
-            if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-            t.write(ln)
-            bld+="\\b"+dta
-            if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
+            try:
+                ln=bld+"\t"+dta.split(": ")[1]+"\n"
+                if args.ascii: ln=ln.encode("ascii", "ignore").decode()
+                t.write(ln)
+                bld+="\\b"+dta
+                if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
+            except: print(dta)
 
     for line in tqdm(val): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
-            ln=bld+"\t"+dta.split(": ")[1]+"\n"
-            if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-            v.write(ln)
-            bld+="\\b"+dta
-            if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
+            try:
+                ln=bld+"\t"+dta.split(": ")[1]+"\n"
+                if args.ascii: ln=ln.encode("ascii", "ignore").decode()
+                v.write(ln)
+                bld+="\\b"+dta
+                if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
+            except: print(dta)

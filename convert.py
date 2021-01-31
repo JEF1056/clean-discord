@@ -36,7 +36,7 @@ parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=Fals
 
 parser.add_argument("-nontoxic", type=str, default="fast", choices=["fast", "slow", None],
                     help="if none, don't remove profanity, if fast, use a wordlist, if slow, use an AI")
-parser.add_argument("-censor", type=str, defualt="remove", choices=["remove", "censor", None],
+parser.add_argument("-censor", type=str, default="remove", choices=["remove", "censor", None],
                     help="censor sentences instead of removing them")
 parser.add_argument('-nontoxic_source', type=str, default="context",
                     choices=["context", "context-ascii", "context-pairs"],

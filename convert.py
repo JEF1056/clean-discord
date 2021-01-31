@@ -194,7 +194,7 @@ if args.step == "clean":
 
         threads = []
 
-        for i, in range(0,len(all_data_files), args.threads):  # loop through each file containing messages
+        for i in range(0,len(all_data_files), args.threads):  # loop through each file containing messages
             if i+args.threads > len(all_data_files)-1: end=len(all_data_files)-1
             else: end=i+args.threads
             for p in range(i,end):

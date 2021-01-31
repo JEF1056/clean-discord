@@ -1,5 +1,6 @@
 import io
 import os
+from random import choice
 import re
 import time
 import json
@@ -33,8 +34,10 @@ parser.add_argument('-step', type=str, default="clean", choices=["clean", "nonto
 parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=False,
                     help="takes into account discord's new replies feature to create a file of only sentence pairs (data yeilds will be low)")
 
-parser.add_argument("-nontoxic", type=str2bool, nargs='?', const=True, default=False,
-                    help="use an AI to clean text files")
+parser.add_argument("-nontoxic", type=str, default="fast", choices=["fast", "slow", None],
+                    help="if none, don't remove profanity, if fast, use a wordlist, if slow, use an AI")
+parser.add_argument("-censor", type=str, defualt="remove", choices=["remove", "censor", None],
+                    help="censor sentences instead of removing them")
 parser.add_argument('-nontoxic_source', type=str, default="context",
                     choices=["context", "context-ascii", "context-pairs"],
                     help="clean ascii or non-ascii context")
@@ -44,6 +47,7 @@ parser.add_argument("-confidence", type=float, default=0.85,
                     help="AI must be > 0.85 sure that the message is toxic to remove it")
 
 args = parser.parse_args()
+if args.nontoxic == None or args.nontoxic == "slow": args.censor=None
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -105,7 +109,7 @@ def clean_worker(file_data, outFunc):
                 ).timetuple()
             )
 
-            msg = clean(curr_message["content"])  # clean the message
+            msg = clean(curr_message["content"], args.censor)  # clean the message
 
             if args.pairs:
 
@@ -226,7 +230,8 @@ if args.step == "clean":
         p.close()  # close the files
 
 
-if args.step == "nontoxic" or args.nontoxic:
+if args.step == "nontoxic" or args.nontoxic == "slow":
+    assert args.nontoxic == "slow", "fast detoxificaion is only supported during regex cleaning"
     from tox_block.prediction import make_predictions as detect
 
     to_clean = io.open(os.path.join(args.out, f"{args.nontoxic_source}.txt"), mode="r",

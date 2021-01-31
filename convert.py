@@ -87,7 +87,7 @@ len_all_messages = (
     else all_messages
 )  # this is to determine the length of tqdm's progress bar
 
-def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
+def clean_worker(file_data, outFunc_Primary, outFunc_Pairs, pbar):
     global disposed, completed
 
     if args.pairs:  # generate a dict of messages and their index in messages
@@ -161,7 +161,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
 
                 build = ""  # reset the last known people
                 last_known_name = ""
-
+            pbar.update(1)
             last_known_time = today  # save the time of the current message
 
         else:
@@ -193,15 +193,17 @@ if args.step == "clean":
         else:outputFunc_Pairs=None
 
         threads = []
+        pbar=tqdm(total=len_all_messages, desc="Processing files")
 
         for i, in range(0,len(all_data_files), args.threads):  # loop through each file containing messages
-
+            
             if len(threads) == args.threads:
                 print("Thread cap reached, waiting...")
                 x = threads.pop(0)
                 x.join()
 
-            print("Starting", all_data_files[i])
+            #print("Starting", all_data_files[i])
+            pbar.set_description(f"Starting {all_data_files[i]}")
 
             file_data = (
                 all_messages[all_data_files[i]]
@@ -210,8 +212,8 @@ if args.step == "clean":
                     io.open(os.path.join(args.dir, all_data_files[i]), mode="r", encoding="utf-8")
                 )["messages"]
             )  # load the file or if cached, full it from memory
-
-            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
+            
+            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs, pbar))
             th.start()
             threads.append(th)
 

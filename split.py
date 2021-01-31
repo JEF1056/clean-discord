@@ -11,6 +11,8 @@ parser.add_argument('-out', type=str, default="context",
                     help='prefix for the files to be written')
 parser.add_argument('-split', type=float, default=0.95,
                     help='split% for training data')
+parser.add_argument('-max_len', type=int, default=2038,
+                    help='max length of the dataset')
 args = parser.parse_args()
 
 data=[]
@@ -25,12 +27,15 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
     del data
     del dist
     for line in tqdm(train): 
-        bld=[line.split("\t")[0]]
+        bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
-            t.write("\b".join(bld)+"\t"+dta.split(": ")[1]+"\n")
-            bld.append(dta)
+            t.write(bld+"\t"+dta.split(": ")[1]+"\n")
+            bld+="\b"+dta
+            if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
+
     for line in tqdm(val): 
-        bld=[line.split("\t")[0]]
+        bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
-            v.write("\b".join(bld)+"\t"+dta.split(": ")[1]+"\n")
-            bld.append(dta)
+            v.write(bld+"\t"+dta.split(": ")[1]+"\n")
+            bld+="\b"+dta
+            if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break

@@ -39,12 +39,12 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             t.write(bld+"\t"+dta+"\n")
-            bld+="\b"+dta
+            bld+="\\b"+dta
             if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
 
     for line in tqdm(val): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             v.write(bld+"\t"+dta+"\n")
-            bld+="\b"+dta
+            bld+="\\b"+dta
             if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break

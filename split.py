@@ -25,7 +25,7 @@ def chunks(lst, n):
 data=[]
 for file in os.listdir(args.dir):
     for convo in io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"):
-        dta=list(chunks(convo, args.chunks+1))
+        dta=list(chunks(convo.split("\t"), args.chunks+1))
         data.extend(dta)
 data=list(filter(None, data))
 

@@ -196,7 +196,7 @@ if args.step == "clean":
         threads = []
         pbar=tqdm(total=len_all_messages, desc="Processing files")
 
-        for file in enumerate(all_data_files):  # loop through each file containing messages
+        for file in all_data_files:  # loop through each file containing messages
             
             if len(threads) == args.threads:
                 print("Thread cap reached, waiting...")

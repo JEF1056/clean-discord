@@ -166,6 +166,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs, pbar):
 
         else:
             disposed += 1
+    del file_data
 
 
 if args.step == "clean":

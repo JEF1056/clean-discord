@@ -2,7 +2,6 @@ import io
 import re
 import random
 import argparse
-from better_profanity import profanity
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 bot_prefixes=io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n")
@@ -57,8 +56,7 @@ r7=re.compile(r'@Deleted User')
 r8=re.compile(r"([\s!?@\"\'])\1+")
 r9=re.compile(r'\s([?.!\"](?:\s|$))')
 
-
-def clean(text, censor="remove", author=None):
+def clean(text, author=None):
     for prefix in bot_prefixes:
         if text.lower().startswith(prefix): return None #handle bot commands
         
@@ -86,11 +84,6 @@ def clean(text, censor="remove", author=None):
     text= re.sub(r8, r"\1",text.strip()) #handle excessive spaces or excessive punctuation
     text= re.sub(r9, r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
-    
-    if censor == "remove" and profanity.contains_profanity(text): #remove if censor is set to remove, but don't remove authors
-        if author == None: return None
-        else: return gen_name(author)
-    elif censor == "censor": text = profanity.censor(text)
     
     if text != "\\n" and text != " " and text != "" and author==None:
         return text

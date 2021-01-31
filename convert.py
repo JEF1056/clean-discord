@@ -218,7 +218,7 @@ if args.step == "clean":
             th.start()
             threads.append(th)
 
-        print("No more threads left to start")
+        print("\nNo more threads left to start")
 
         for i, th in enumerate(threads):
             print(f"Joining thread {i+1}/{len(threads)}, waiting for end...", end=" ")

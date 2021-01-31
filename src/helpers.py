@@ -1,7 +1,7 @@
 import io
+import re
 import random
 import argparse
-import regex as re
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 bot_prefixes=io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n")
@@ -58,7 +58,7 @@ def clean(text, author=None):
     for prefix in bot_prefixes:
         if text.lower().startswith(prefix): return None #handle bot commands
         
-    text= re.sub(r1, "", text,concurrent=True) #remove urls, emails, code blocks, custom emojis, and phone numbers
+    text= re.sub(r1, "", text) #remove urls, emails, code blocks, custom emojis, and phone numbers
     temp=""
     for char in text.strip():
         convi=None
@@ -72,15 +72,15 @@ def clean(text, author=None):
         if convi==None: temp+=char
     text= temp
     text= text.replace("\t"," ") #handle tabs
-    text= re.sub(r2, " ", text,concurrent=True) #handle... interesting spaces
+    text= re.sub(r2, " ", text) #handle... interesting spaces
     text= "".join([normalize_chars[char] if char in normalize_chars else char for char in text.strip()]) #handle special chars from other langs
-    text= re.sub(r3, r'\1\2', text,concurrent=True) #handle extraneous spaces between punctuation    
-    text= re.sub(r4, "",text.strip(),concurrent=True) #handle non-emoji, punctuation, and letters
-    text= re.sub(r5, r"\1\1\1", text.strip(),concurrent=True) #handle excessive repeats of punctuation, limited to 3
-    text= re.sub(r6, r" \1 ", text.strip(),concurrent=True) #handle repeated words
+    text= re.sub(r3, r'\1\2', text) #handle extraneous spaces between punctuation    
+    text= re.sub(r4, "",text.strip()) #handle non-emoji, punctuation, and letters
+    text= re.sub(r5, r"\1\1\1", text.strip()) #handle excessive repeats of punctuation, limited to 3
+    text= re.sub(r6, r" \1 ", text.strip()) #handle repeated words
     if author == None: text= re.sub(r7, gen_name, text) #replace "deleted users" with names
-    text= re.sub(r8, r"\1",text.strip(),concurrent=True) #handle excessive spaces or excessive punctuation
-    text= re.sub(r9, r'\1', text,concurrent=True) #handle spaces before punctuation but after text
+    text= re.sub(r8, r"\1",text.strip()) #handle excessive spaces or excessive punctuation
+    text= re.sub(r9, r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
     
     if text != "\\n" and text != " " and text != "" and author==None:

@@ -169,7 +169,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
 
         else:
             disposed += 1
-        if args.update % cstep+1 == 0: pbar.update(args.update)
+        if cstep % args.update == 0: pbar.update(args.update)
     del file_data
     for i in msgs:  outFunc_Primary(i)
     for i in pairs: outFunc_Pairs(i)

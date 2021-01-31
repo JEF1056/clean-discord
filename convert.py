@@ -163,11 +163,11 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
 
                 build = ""  # reset the last known people
                 last_known_name = ""
-            pbar.update(1)
             last_known_time = today  # save the time of the current message
 
         else:
             disposed += 1
+    pbar.update(len(file_data))
     del file_data
     for i in msgs:  outFunc_Primary(i)
     for i in pairs: outFunc_Pairs(i)

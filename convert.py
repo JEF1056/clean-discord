@@ -1,6 +1,5 @@
 import io
 import os
-from random import choice
 import re
 import time
 import json
@@ -9,6 +8,7 @@ from tqdm import tqdm
 from src.helpers import *
 from datetime import datetime
 from src.validate import check_files
+from better_profanity import profanity
 
 import threading
 

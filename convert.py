@@ -85,7 +85,7 @@ if (args.cache == False and args.step == "nontoxic") or args.step == "clean":
         pass
 
 
-def clean_worker(file_data, outFunc):
+def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
     global disposed, completed
 
     if args.pairs:  # generate a dict of messages and their index in messages
@@ -127,11 +127,7 @@ def clean_worker(file_data, outFunc):
                     # make sure the messages after being cleaned are not empty
                     if source_msg is not None and msg is not None:
                         # write files instead of storing them to save memory
-                        p.write(
-                            f"{source_author}: "
-                            f"{source_msg}\t{clean(last_known_name, author=curr_message['author']['id'])}: "
-                            f"{msg}\n"
-                        )
+                        outFunc_Pairs(f"{source_author}: {source_msg}\t{clean(last_known_name, author=curr_message['author']['id'])}: {msg}\n")
 
                 except Exception:
                     pass
@@ -156,7 +152,7 @@ def clean_worker(file_data, outFunc):
 
                 # check if the number of messages in the conversation is >2
                 if len(build.split("\t")) >= args.min_messages and build != "":
-                    outFunc(build + "\n")  # write the conversation
+                    outFunc_Primary(build + "\n")  # write the conversation
                     completed += 1
                 else:
                     disposed += 1
@@ -189,10 +185,17 @@ if args.step == "clean":
 
         file_lock = threading.Lock()
 
-        def outputFunc(dat):
+        def outputFunc_Primary(dat):
             file_lock.acquire()
             f.write(dat)
             file_lock.release()
+            
+        if args.pairs:
+            def outputFunc_Pairs(dat):
+                file_lock.acquire()
+                p.write(dat)
+                file_lock.release()
+        else:outputFunc_Pairs=None
 
         threads = []
 
@@ -213,7 +216,7 @@ if args.step == "clean":
                 )["messages"]
             )  # load the file or if cached, full it from memory
 
-            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc))
+            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
             th.start()
             threads.append(th)
 

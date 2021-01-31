@@ -177,7 +177,7 @@ if args.step == "clean":
     with io.open(
             os.path.join(args.out, "context.txt"), mode="w", encoding="utf-8"
     ) as f:  # initializes tqdm and the primary file to write to
-
+        t1=time.time()
         file_lock = threading.Lock()
 
         def outputFunc_Primary(dat):
@@ -197,11 +197,11 @@ if args.step == "clean":
         for i, file in enumerate(all_data_files):  # loop through each file containing messages
 
             if len(threads) == args.threads:
-                print("thread cap reached, waiting...")
+                print("Thread cap reached, waiting...")
                 x = threads.pop(0)
                 x.join()
 
-            print("starting", file)
+            print("Starting", file)
 
             file_data = (
                 all_messages[file]
@@ -215,12 +215,12 @@ if args.step == "clean":
             th.start()
             threads.append(th)
 
-        print("no more threads left to start")
+        print("No more threads left to start")
 
         for i, th in enumerate(threads):
-            print(f"joining thread {i+1}/{len(threads)}, waiting for end...", end=" ")
+            print(f"Joining thread {i+1}/{len(threads)}, waiting for end...", end=" ")
             th.join()
-            print("ended")
+            print(f"Done in {t1-time.time()} seconds")
 
     del all_messages
 

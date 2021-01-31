@@ -196,7 +196,7 @@ if args.step == "clean":
         threads = []
         pbar=tqdm(total=len_all_messages, desc="Processing files")
 
-        for i, in range(0,len(all_data_files), args.threads):  # loop through each file containing messages
+        for file in enumerate(all_data_files):  # loop through each file containing messages
             
             if len(threads) == args.threads:
                 print("Thread cap reached, waiting...")
@@ -204,13 +204,13 @@ if args.step == "clean":
                 x.join()
 
             #print("Starting", all_data_files[i])
-            pbar.set_description(f"Starting {all_data_files[i]}")
+            pbar.set_description(f"Starting {all_data_files[file]}")
 
             file_data = (
-                all_messages[all_data_files[i]]
+                all_messages[all_data_files[file]]
                 if type(all_messages) == tuple
                 else json.load(
-                    io.open(os.path.join(args.dir, all_data_files[i]), mode="r", encoding="utf-8")
+                    io.open(os.path.join(args.dir, all_data_files[file]), mode="r", encoding="utf-8")
                 )["messages"]
             )  # load the file or if cached, full it from memory
             

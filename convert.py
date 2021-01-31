@@ -87,8 +87,8 @@ len_all_messages = (
     else all_messages
 )  # this is to determine the length of tqdm's progress bar
 
-def clean_worker(file_data, outFunc_Primary, outFunc_Pairs, pbar):
-    global disposed, completed
+def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
+    global disposed, completed, pbar
 
     if args.pairs:  # generate a dict of messages and their index in messages
         message_indexes = {msgdata["id"]: loc for loc, msgdata in enumerate(file_data)}
@@ -214,7 +214,7 @@ if args.step == "clean":
                 )["messages"]
             )  # load the file or if cached, full it from memory
             
-            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs, pbar))
+            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
             th.start()
             threads.append(th)
 

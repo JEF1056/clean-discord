@@ -199,7 +199,7 @@ if args.step == "clean":
         for file in all_data_files:  # loop through each file containing messages
             
             if len(threads) == args.threads:
-                print("Thread cap reached, waiting...")
+                pbar.set_description(f"Thread cap reached, waiting ...")
                 x = threads.pop(0)
                 x.join()
 

@@ -59,6 +59,7 @@ r9=re.compile(r'\s([?.!\"](?:\s|$))')
 def clean(text, author=None):
     for prefix in bot_prefixes:
         if text.lower().startswith(prefix): return None #handle bot commands
+    if author != None and text == "Deleted User": return gen_name(author)
         
     unique=[i for i in list(set(text)) if i not in alphabets[0]] #handle special chars from other langs
     try: 
@@ -75,10 +76,7 @@ def clean(text, author=None):
     
     if text != "\\n" and text != " " and text != "" and author==None:
         return text
-    elif text != "\\n" and text != " " and text != "" and text != "Deleted User" and author!=None:
-        # add code to replace names
+    elif text != "\\n" and text != " " and text != "" and author!=None:
         return text.split(" ")[-1]
-    elif author!=None:
-        return gen_name(author)
     else:
         return None

@@ -98,8 +98,6 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
     last_known_name = ""
     last_known_time = 0
     build = ""
-    pairs=[]
-    msgs=[]
     
     for cstep, curr_message in enumerate(file_data):  # loop through the messages
 
@@ -133,7 +131,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
                     # make sure the messages after being cleaned are not empty
                     if source_msg is not None and msg is not None:
                         # write files instead of storing them to save memory
-                        pairs.append(f"{source_author}: {source_msg}\t{clean(last_known_name, author=curr_message['author']['id'])}: {msg}\n")
+                        outFunc_Pairs(f"{source_author}: {source_msg}\t{clean(last_known_name, author=curr_message['author']['id'])}: {msg}\n")
 
                 except Exception:
                     pass
@@ -158,7 +156,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
 
                 # check if the number of messages in the conversation is >2
                 if len(build.split("\t")) >= args.min_messages and build != "":
-                    msgs.append(build + "\n")  # write the conversation
+                    outFunc_Primary(build + "\n")  # write the conversation
                     completed += 1
                 else:
                     disposed += 1
@@ -171,10 +169,6 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
             disposed += 1
         if cstep % args.update == 0: pbar.update(args.update)
     del file_data
-    for i in msgs:  outFunc_Primary(i)
-    for i in pairs: outFunc_Pairs(i)
-    del msgs
-    del pairs
 
 
 if args.step == "clean":

@@ -22,6 +22,8 @@ parser.add_argument('-update_interval', type=int, default=1000,
                     help='TQDM update interval')
 parser.add_argument('-min_messages', type=int, default=2,
                     help='override the minimum number of messages that form a conversation')
+parser.add_argument('-threads', type=int, default=16,
+                    help='override the maximum number of threads to spawn')
 parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True, default=False,
                     help="disable TQDM description")
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
@@ -40,11 +42,10 @@ parser.add_argument("-batches", type=int, default=100,
                     help="minimum number of batches to feed the AI (only needed if -nontoxic is used)")
 parser.add_argument("-confidence", type=float, default=0.85,
                     help="AI must be > 0.85 sure that the message is toxic to remove it")
+
 args = parser.parse_args()
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-MAX_THREADS = 16
 
 # these are primarily statistics and the sort
 disposed_tox = 0
@@ -193,7 +194,7 @@ if args.step == "clean":
 
         for i, file in enumerate(all_data_files):  # loop through each file containing messages
 
-            if len(threads) == MAX_THREADS:
+            if len(threads) == args.threads:
                 print("thread cap reached, waiting...")
                 x = threads.pop(0)
                 x.join()
@@ -223,6 +224,7 @@ if args.step == "clean":
 
     if args.pairs:
         p.close()  # close the files
+
 
 if args.step == "nontoxic" or args.nontoxic:
     from tox_block.prediction import make_predictions as detect

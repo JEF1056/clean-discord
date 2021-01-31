@@ -24,5 +24,13 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
     val=[e for i,e in enumerate(data) if dist[i]=="v"]
     del data
     del dist
-    for line in tqdm(train): t.write(line+"\n")
-    for line in tqdm(val): v.write(line+"\n")
+    for line in tqdm(train): 
+        bld=[line.split("\t")[0]]
+        for dta in line.split("\t")[1:]:
+            t.write("\b".join(bld)+"\t"+dta.split(": ")[1]+"\n")
+            bld.append(dta)
+    for line in tqdm(val): 
+        bld=[line.split("\t")[0]]
+        for dta in line.split("\t")[1:]:
+            v.write("\b".join(bld)+"\t"+dta.split(": ")[1]+"\n")
+            bld.append(dta)

@@ -81,6 +81,11 @@ if (args.cache == False and args.step == "nontoxic") or args.step == "clean":
     except FileExistsError:
         pass
 
+len_all_messages = (
+    sum([len(all_messages[msgs]) for msgs in all_messages])
+    if type(all_messages) == tuple
+    else all_messages
+)  # this is to determine the length of tqdm's progress bar
 
 def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
     global disposed, completed
@@ -164,13 +169,6 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
 
 
 if args.step == "clean":
-
-    len_all_messages = (
-        sum([len(all_messages[msgs]) for msgs in all_messages])
-        if type(all_messages) == tuple
-        else all_messages
-    )  # this is to determine the length of tqdm's progress bar
-
     if args.pairs:
         p = io.open(
             os.path.join(args.out, "context-pairs.txt"), mode="w", encoding="utf-8"

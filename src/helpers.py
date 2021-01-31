@@ -1,7 +1,7 @@
 import io
-import re
 import random
 import argparse
+import regex as re
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 bot_prefixes=io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n")
@@ -44,15 +44,15 @@ def gen_name(username):
     except: return "@"+random.choice(names)
     
 #precompile regex
-r1=re.compile(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|\S+@\S+|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(.*\n)+```|:[^:\s]*(?:::[^:\s]*)*:|\\n')
-r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\U00000020]')
-r3=re.compile(r'([:.,!?@\'\"]|\\n) ([:.,!?\'\"]|\\n)')
-r4=re.compile(r"[^a-z1-9.,!@?\"\'\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+",re.IGNORECASE)
-r5=re.compile(r"([\.\'\"@?!a-z])\1{3,}", re.IGNORECASE)
-r6=re.compile(r"\s(.+?)\1+\s", re.IGNORECASE)
-r7=re.compile(r'@Deleted User')
-r8=re.compile(r"([\s!?@\"\'])\1+")
-r9=re.compile(r'\s([?.!\"](?:\s|$))')
+r1=re.compile(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|\S+@\S+|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(.*\n)+```|:[^:\s]*(?:::[^:\s]*)*:|\\n', concurrent=True)
+r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\U00000020]',concurrent=True)
+r3=re.compile(r'([:.,!?@\'\"]|\\n) ([:.,!?\'\"]|\\n)',concurrent=True)
+r4=re.compile(r"[^a-z1-9.,!@?\"\'\s\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+",re.IGNORECASE,concurrent=True)
+r5=re.compile(r"([\.\'\"@?!a-z])\1{3,}", re.IGNORECASE,concurrent=True)
+r6=re.compile(r"\s(.+?)\1+\s", re.IGNORECASE,concurrent=True)
+r7=re.compile(r'@Deleted User',concurrent=True)
+r8=re.compile(r"([\s!?@\"\'])\1+",concurrent=True)
+r9=re.compile(r'\s([?.!\"](?:\s|$))',concurrent=True)
 
 def clean(text, author=None):
     for prefix in bot_prefixes:

@@ -20,7 +20,7 @@ args = parser.parse_args()
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
-        yield lst[i:i + n]
+        yield "\t".join(lst[i:i + n])
 
 data=[]
 for file in os.listdir(args.dir):

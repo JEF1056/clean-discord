@@ -77,7 +77,7 @@ def clean(text, censor="remove", author=None):
     
     if censor == "remove" and profanity.contains_profanity(text): #remove if censor is set to remove, but don't remove authors
         if author == None: return None
-        else: return return gen_name(author)
+        else: return gen_name(author)
     elif censor == "censor": text = profanity.censor(text)
     
     if text != "\\n" and text != " " and text != "" and author==None:

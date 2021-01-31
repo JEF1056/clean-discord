@@ -28,6 +28,8 @@ parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=Fals
                     help="turn on cache when reading files (uses a lot of memory)")
 parser.add_argument('-step', type=str, default="clean", choices=["clean", "nontoxic"],
                     help="which step to start on (in case you've already cleaned the data)")
+parser.add_argument('-update', type=int, default=10000,
+                    help="number of steps before updating TQDM")
 parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=False,
                     help="takes into account discord's new replies feature to create a file of only sentence pairs (data yeilds will be low)")
 
@@ -99,7 +101,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
     pairs=[]
     msgs=[]
     
-    for curr_message in file_data:  # loop through the messages
+    for cstep, curr_message in enumerate(file_data):  # loop through the messages
 
         if not curr_message["author"]["isBot"]:  # ignore bots
 
@@ -167,7 +169,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
 
         else:
             disposed += 1
-    pbar.update(len(file_data))
+        if args.update % cstep == 0: pbar.update(args.update)
     del file_data
     for i in msgs:  outFunc_Primary(i)
     for i in pairs: outFunc_Pairs(i)

@@ -1,4 +1,3 @@
 tox-block
 tqdm
 better_profanity
-regex

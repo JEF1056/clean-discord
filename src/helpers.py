@@ -2,11 +2,14 @@ import io
 import re
 import random
 import argparse
+from better_profanity import profanity
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 bot_prefixes=io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+badwords=io.open("src/badwords.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 replace_names={}
+profanity.load_censor_words(badwords)
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
     'Å':'A', 'Æ':'A', 'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E', 'Ì':'I', 'Í':'I', 'Î':'I',
     'Ï':'I', 'Ñ':'N', 'Ń':'N', 'Ò':'O', 'Ó':'O', 'Ô':'O', 'Õ':'O', 'Ö':'O', 'Ø':'O', 'Ù':'U', 'Ú':'U',
@@ -43,10 +46,10 @@ def gen_name(username):
         return out_name
     except: return "@"+random.choice(names)
 
-def clean(text, author=None):
+def clean(text, censor="remove", author=None):
     for prefix in bot_prefixes:
         if text.lower().startswith(prefix): return None #handle bot commands
-    
+        
     text= re.sub(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|\S+@\S+|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(.*\n)+```|:[^:\s]*(?:::[^:\s]*)*:|\\n', "", text) #remove urls, emails, code blocks, custom emojis, and phone numbers
     temp=""
     for char in text.strip():
@@ -71,6 +74,11 @@ def clean(text, author=None):
     text= re.sub(r"([\s!?@\"\'])\1+", r"\1",text.strip()) #handle excessive spaces or excessive punctuation
     text= re.sub(r'\s([?.!\"](?:\s|$))', r'\1', text) #handle spaces before punctuation but after text
     text= text.replace("\n","\\n") #handle newlines
+    
+    if censor == "remove" and profanity.contains_profanity(text): #remove if censor is set to remove, but don't remove authors
+        if author == None: return None
+        else: return return gen_name(author)
+    elif censor == "censor": text = profanity.censor(text)
     
     if text != "\\n" and text != " " and text != "" and author==None:
         return text

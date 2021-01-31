@@ -194,33 +194,30 @@ if args.step == "clean":
 
         threads = []
 
-        for i, file in enumerate(all_data_files):  # loop through each file containing messages
+        for i, in range(0,len(all_data_files), args.threads):  # loop through each file containing messages
+            if i+args.threads > len(all_data_files)-1: end=len(all_data_files)-1
+            else: end=i+args.threads
+            for p in range(i,end):
+                print("Starting", all_data_files[p])
 
-            if len(threads) == args.threads:
-                print("Thread cap reached, waiting...")
-                x = threads.pop(0)
-                x.join()
+                file_data = (
+                    all_messages[all_data_files[p]]
+                    if type(all_messages) == tuple
+                    else json.load(
+                        io.open(os.path.join(args.dir, all_data_files[p]), mode="r", encoding="utf-8")
+                    )["messages"]
+                )  # load the file or if cached, full it from memory
 
-            print("Starting", file)
-
-            file_data = (
-                all_messages[file]
-                if type(all_messages) == tuple
-                else json.load(
-                    io.open(os.path.join(args.dir, file), mode="r", encoding="utf-8")
-                )["messages"]
-            )  # load the file or if cached, full it from memory
-
-            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
-            th.start()
-            threads.append(th)
+                th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
+                th.start()
+                threads.append(th)
+            
+            for i, th in enumerate(threads):
+                print(f"Joining thread {i+1}/{len(threads)}, waiting for end...", end=" ")
+                th.join()
+                print(f"Done in {round(time.time()-t1, 2)} seconds")
 
         print("No more threads left to start")
-
-        for i, th in enumerate(threads):
-            print(f"Joining thread {i+1}/{len(threads)}, waiting for end...", end=" ")
-            th.join()
-            print(f"Done in {round(time.time()-t1, 2)} seconds")
 
     del all_messages
 

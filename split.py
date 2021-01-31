@@ -11,13 +11,21 @@ parser.add_argument('-out', type=str, default="context",
                     help='prefix for the files to be written')
 parser.add_argument('-split', type=float, default=0.95,
                     help='split% for training data')
-parser.add_argument('-max_len', type=int, default=2038,
+parser.add_argument('-chunks', type=int, default=20,
+                    help='max length of the dataset')
+parser.add_argument('-max_length', type=int, default=2048,
                     help='max length of the dataset')
 args = parser.parse_args()
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 data=[]
 for file in os.listdir(args.dir):
-    data.extend(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"))
+    dta=list(chunks(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"), args.chunks+1))
+    data.extend(dta)
 data=list(filter(None, data))
 
 with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") as t,  io.open(os.path.join(f"{args.out}-val.txt"), mode="w", encoding="utf-8") as v:

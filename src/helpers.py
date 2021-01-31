@@ -73,7 +73,6 @@ def clean(text, author=None):
     text= re.sub(r8, r"\1",text) #handle excessive spaces or excessive punctuation
     text= re.sub(r9, r'\1', text) #handle spaces before punctuation but after text
     text= text.strip().replace("\n","\\n") #handle newlines
-    temp_times.append(time.time()-t1)
     
     if text != "\\n" and text != " " and text != "" and author==None:
         return text

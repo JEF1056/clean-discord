@@ -249,7 +249,8 @@ if args.step == "nontoxic" or args.nontoxic != None:
                         elif args.censor == "censor": 
                             tc=conv.split(': ')
                             to_write.append(f"{tc[0]}: {profanity.censor(tc[1])}")                            
-                        else: to_write.append(conv)      
+                        else: to_write.append(conv)   
+                    pbar.set_description(f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")   
                     if len(to_write) < args.min_messages: 
                         disposed+=len(to_write)
                     else:

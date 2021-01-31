@@ -62,9 +62,9 @@ def clean(text, author=None):
     if author != None and text == "Deleted User": return gen_name(author)
         
     unique=[i for i in list(set(text)) if i not in alphabets[0]] #handle special chars from other langs
-    try: 
-        for char in unique: text.replace(char, normalize_chars[char])
-    except:pass
+    for char in unique: 
+        try: text=text.replace(char, normalize_chars[char])
+        except:pass
     text= re.sub(r1, "", text.strip()) #remove urls, emails, code blocks, custom emojis, spaces between punctuation, non-emoji, punctuation, letters, and phone numbers
     text= re.sub(r2, " ", text) #handle... interesting spaces
     text= re.sub(r5, r"\1\1\1", text) #handle excessive repeats of punctuation, limited to 3
@@ -73,6 +73,7 @@ def clean(text, author=None):
     text= re.sub(r8, r"\1",text) #handle excessive spaces or excessive punctuation
     text= re.sub(r9, r'\1', text) #handle spaces before punctuation but after text
     text= text.strip().replace("\n","\\n") #handle newlines
+    temp_times.append(time.time()-t1)
     
     if text != "\\n" and text != " " and text != "" and author==None:
         return text

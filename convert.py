@@ -204,13 +204,13 @@ if args.step == "clean":
                 x.join()
 
             #print("Starting", all_data_files[i])
-            pbar.set_description(f"Starting {all_data_files[file]}")
+            pbar.set_description(f"Starting {file}")
 
             file_data = (
-                all_messages[all_data_files[file]]
+                all_messages[file]
                 if type(all_messages) == tuple
                 else json.load(
-                    io.open(os.path.join(args.dir, all_data_files[file]), mode="r", encoding="utf-8")
+                    io.open(os.path.join(args.dir, file), mode="r", encoding="utf-8")
                 )["messages"]
             )  # load the file or if cached, full it from memory
             

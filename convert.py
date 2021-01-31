@@ -25,8 +25,6 @@ parser.add_argument('-min_messages', type=int, default=2,
                     help='override the minimum number of messages that form a conversation')
 parser.add_argument('-threads', type=int, default=16,
                     help='override the maximum number of threads to spawn')
-parser.add_argument("-disable_description", type=str2bool, nargs='?', const=True, default=False,
-                    help="disable TQDM description")
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
                     help="turn on cache when reading files (uses a lot of memory)")
 parser.add_argument('-step', type=str, default="clean", choices=["clean", "nontoxic"],
@@ -109,7 +107,7 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
                 ).timetuple()
             )
 
-            msg = clean(curr_message["content"], args.censor)  # clean the message
+            msg = clean(curr_message["content"])  # clean the message
 
             if args.pairs:
 
@@ -233,41 +231,57 @@ if args.step == "clean":
         p.close()  # close the files
 
 
-if args.step == "nontoxic" or args.nontoxic == "slow":
-    assert args.nontoxic == "slow", "fast detoxificaion is only supported during regex cleaning"
-    from tox_block.prediction import make_predictions as detect
-
+if args.step == "nontoxic" or args.nontoxic != None:
+    if args.step == "nontoxic": assert args.nontoxic != None
     to_clean = io.open(os.path.join(args.out, f"{args.nontoxic_source}.txt"), mode="r",
-                       encoding="utf-8").read().strip().split("\n")
+                        encoding="utf-8").read().strip().split("\n")
     with io.open(os.path.join(args.out, "context-detox.txt"), mode="w", encoding="utf-8") as f:
-        with tqdm(to_clean, desc="Processing messages") as pbar:
-            batch = []
-            for curr_index, conversation in enumerate(pbar):
-                batch.append(conversation)
-                if curr_index == len(to_clean) - 1 or sum(
-                        [len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
-                    batch_placement, sents = [0], []
-                    for conv in batch:
-                        splt= list(filter(None, conv.strip().split("\t")))
-                        sents.extend(list(filter(None, [remove.replace("\\n","\n").strip() for remove in splt]))) #not sure currently if the tox-block model is affected by "\\n", experiment?
-                        batch_placement.append(len(splt))
-                    prediction_vals=detect(sents)
-                    scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
-                    offsets=[sum(batch_placement[0:i]) for i in range(1,len(batch_placement))]
-                    for ind, batch_score in enumerate([scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]):
-                        to_write=[]
-                        for i,v in enumerate(batch_score):
-                            if v <= args.confidence: to_write.append(sents[offsets[ind]+i].replace("\n","\\n"))
-                            else: disposed_tox+=1
-                        if to_write != []:
-                            if to_write[0].startswith("\\n"): to_write=to_write[1:]
-                            if len(to_write) < args.min_messages: 
-                                disposed+=len(to_write)
-                            else:
-                                to_write="\t".join(to_write)
-                                f.write(to_write+"\n")
-                    pbar.set_description(f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")
-                    batch=[]
+        with tqdm(to_clean, desc=f"Processing messages {args.nontoxic}ly") as pbar:
+            if args.nontoxic == "fast":
+                for conversation in pbar:
+                    conversation=list(filter(None, conversation.strip().split("\t")))
+                    to_write=[]
+                    for conv in conversation:
+                        if args.censor == "remove" and profanity.contains_profanity(conv): 
+                            pass
+                        elif args.censor == "censor": 
+                            tc=conv.split(': ')
+                            to_write.append(f"{tc[0]}: {profanity.censor(tc[1])}")                            
+                        else: to_write.append(conv)      
+                    if len(to_write) < args.min_messages: 
+                        disposed+=len(to_write)
+                    else:
+                        to_write="\t".join(to_write)
+                        f.write(to_write+"\n") 
+            elif args.nontoxic == "slow":
+                from tox_block.prediction import make_predictions as detect
+                batch = []
+                for curr_index, conversation in enumerate(pbar):
+                    batch.append(conversation)
+                    if curr_index == len(to_clean) - 1 or sum(
+                            [len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
+                        batch_placement, sents = [0], []
+                        for conv in batch:
+                            splt= list(filter(None, conv.strip().split("\t")))
+                            sents.extend(list(filter(None, [remove.replace("\\n","\n").strip() for remove in splt]))) #not sure currently if the tox-block model is affected by "\\n", experiment?
+                            batch_placement.append(len(splt))
+                        prediction_vals=detect(sents)
+                        scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
+                        offsets=[sum(batch_placement[0:i]) for i in range(1,len(batch_placement))]
+                        for ind, batch_score in enumerate([scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]):
+                            to_write=[]
+                            for i,v in enumerate(batch_score):
+                                if v <= args.confidence: to_write.append(sents[offsets[ind]+i].replace("\n","\\n"))
+                                else: disposed_tox+=1
+                            if to_write != []:
+                                if to_write[0].startswith("\\n"): to_write=to_write[1:]
+                                if len(to_write) < args.min_messages: 
+                                    disposed+=len(to_write)
+                                else:
+                                    to_write="\t".join(to_write)
+                                    f.write(to_write+"\n")
+                        pbar.set_description(f"From {args.nontoxic_source}.txt, Batch: {len(sents)}, Removed: {disposed_tox}")
+                        batch=[]
 
 print(f"Removed {disposed}+{disposed_tox}/{len_all_messages}, {round((disposed+disposed_tox)/len_all_messages,2)}%")
 final_file_path=os.path.join(args.out,f'{args.nontoxic_source}{"-detox" if args.nontoxic else ""}.txt')

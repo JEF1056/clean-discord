@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 data=[]
 for file in os.listdir(args.dir):
-    data.extnd(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"))
+    data.extend(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"))
 data=filter(None, data)
 
 with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") as t,  io.open(os.path.join(f"{args.out}-val.txt"), mode="w", encoding="utf-8") as v:

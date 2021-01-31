@@ -8,7 +8,6 @@ from tqdm import tqdm
 from src.helpers import *
 from datetime import datetime
 from src.validate import check_files
-from better_profanity import profanity
 
 import threading
 
@@ -238,6 +237,9 @@ if args.step == "nontoxic" or args.nontoxic != None:
     with io.open(os.path.join(args.out, "context-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc=f"Processing messages {args.nontoxic}ly") as pbar:
             if args.nontoxic == "fast":
+                from better_profanity import profanity
+                badwords=io.open("src/badwords.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+                profanity.load_censor_words(badwords)
                 for conversation in pbar:
                     conversation=list(filter(None, conversation.strip().split("\t")))
                     to_write=[]

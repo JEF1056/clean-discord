@@ -5,10 +5,8 @@ import argparse
 
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 bot_prefixes=io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n")
-badwords=io.open("src/badwords.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 replace_names={}
-profanity.load_censor_words(badwords)
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
     'Å':'A', 'Æ':'A', 'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E', 'Ì':'I', 'Í':'I', 'Î':'I',
     'Ï':'I', 'Ñ':'N', 'Ń':'N', 'Ò':'O', 'Ó':'O', 'Ô':'O', 'Õ':'O', 'Ö':'O', 'Ø':'O', 'Ù':'U', 'Ú':'U',

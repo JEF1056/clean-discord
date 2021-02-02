@@ -51,9 +51,9 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             try:
-                ln=bld+"\t"+dta.split(": ")[1]+"\n"
-                if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                if ln != "" and ln != " ":
+                if dta.split(": ")[1] != "" and dta.split(": ")[1] != " ":
+                    ln=bld+"\t"+dta.split(": ")[1]+"\n"
+                    if args.ascii: ln=ln.encode("ascii", "ignore").decode()
                     t.write(ln.replace("\\n",args.newline_symbol))
                     bld+=args.div_symbol+dta
                     if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
@@ -63,9 +63,9 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             try:
-                ln=bld+"\t"+dta.split(": ")[1]+"\n"
-                if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                if ln != "" and ln != " ":
+                if dta.split(": ")[1] != "" and dta.split(": ")[1] != " ":
+                    ln=bld+"\t"+dta.split(": ")[1]+"\n"
+                    if args.ascii: ln=ln.encode("ascii", "ignore").decode()
                     v.write(ln.replace("\\n",args.newline_symbol))
                     bld+=args.div_symbol+dta
                     if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break

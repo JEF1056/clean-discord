@@ -33,7 +33,7 @@ def chunks(lst, n):
 
 data=[]
 for file in os.listdir(args.dir):
-    for convo in io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"):
+    for convo in tqdm(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"), desc="Chunking files"):
         dta=list(chunks(convo.split("\t"), args.chunks+1))
         data.extend(dta)
 data=list(filter(None, data))
@@ -47,7 +47,7 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
     if args.shuffle:
         np.shuffle(train)
         np.shuffle(val)
-    for line in tqdm(train): 
+    for line in tqdm(train, desc="Cleaning lines for train split"): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             try:
@@ -58,7 +58,7 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
                 if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
             except: print(dta)
 
-    for line in tqdm(val): 
+    for line in tqdm(val, desc="Cleaning lines for val split"): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             try:

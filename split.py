@@ -51,6 +51,7 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             try:
+                if args.ascii: dta = dta.encode("ascii", "ignore").decode()
                 if dta.split(": ")[1] != "" and dta.split(": ")[1] != " ":
                     ln=bld+"\t"+dta.split(": ")[1]+"\n"
                     if args.ascii: ln=ln.encode("ascii", "ignore").decode()
@@ -63,6 +64,7 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
             try:
+                if args.ascii: dta = dta.encode("ascii", "ignore").decode()
                 if dta.split(": ")[1] != "" and dta.split(": ")[1] != " ":
                     ln=bld+"\t"+dta.split(": ")[1]+"\n"
                     if args.ascii: ln=ln.encode("ascii", "ignore").decode()

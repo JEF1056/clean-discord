@@ -45,8 +45,8 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
     del data
     del dist
     if args.shuffle:
-        np.shuffle(train)
-        np.shuffle(val)
+        np.random.shuffle(train)
+        np.random.shuffle(val)
     for line in tqdm(train, desc="Cleaning lines for train split"): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:
@@ -56,7 +56,7 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
                 t.write(ln.replace("\\n",args.newline_symbol))
                 bld+=args.div_symbol+dta
                 if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
-            except: print(dta)
+            except: pass
 
     for line in tqdm(val, desc="Cleaning lines for val split"): 
         bld=line.split("\t")[0]
@@ -67,4 +67,4 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
                 v.write(ln.replace("\\n",args.newline_symbol))
                 bld+=args.div_symbol+dta
                 if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
-            except: print(dta)
+            except: pass

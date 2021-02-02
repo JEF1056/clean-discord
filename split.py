@@ -33,7 +33,7 @@ def chunks(lst, n):
 
 data=[]
 for file in os.listdir(args.dir):
-    for convo in tqdm(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"), desc="Chunking files"):
+    for convo in tqdm(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"), desc=f"Chunking {file}"):
         dta=list(chunks(convo.split("\t"), args.chunks+1))
         data.extend(dta)
 data=list(filter(None, data))

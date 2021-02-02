@@ -10,6 +10,10 @@ parser.add_argument('-dir', type=str, default="data",
                     help='the data folder containing preprocessed data to merge and split')
 parser.add_argument('-out', type=str, default="context",
                     help='prefix for the files to be written')
+parser.add_argument('-div_symbol', type=str, default="/b",
+                    help='prefix for the files to be written')
+parser.add_argument('-newline_symbol', type=str, default="/n",
+                    help='prefix for the files to be written')
 parser.add_argument('-split', type=float, default=0.95,
                     help='split% for training data')
 parser.add_argument('-chunks', type=int, default=20,
@@ -44,9 +48,9 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
             try:
                 ln=bld+"\t"+dta.split(": ")[1]+"\n"
                 if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                t.write(ln)
-                bld+="\\b"+dta
-                if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
+                t.write(ln.replace("\\n",args.newline_symbol))
+                bld+=args.div_symbol+dta
+                if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
             except: print(dta)
 
     for line in tqdm(val): 
@@ -55,7 +59,7 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
             try:
                 ln=bld+"\t"+dta.split(": ")[1]+"\n"
                 if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                v.write(ln)
-                bld+="\\b"+dta
-                if len(bld.replace("\\b", " ")) >= int(args.max_len*1.5):break
+                v.write(ln.replace("\\n",args.newline_symbol))
+                bld+=args.div_symbol+dta
+                if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
             except: print(dta)

@@ -53,9 +53,10 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
             try:
                 ln=bld+"\t"+dta.split(": ")[1]+"\n"
                 if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                t.write(ln.replace("\\n",args.newline_symbol))
-                bld+=args.div_symbol+dta
-                if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
+                if ln != "" and ln != " ":
+                    t.write(ln.replace("\\n",args.newline_symbol))
+                    bld+=args.div_symbol+dta
+                    if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
             except: pass
 
     for line in tqdm(val, desc="Cleaning lines for val split"): 
@@ -64,7 +65,8 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
             try:
                 ln=bld+"\t"+dta.split(": ")[1]+"\n"
                 if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                v.write(ln.replace("\\n",args.newline_symbol))
-                bld+=args.div_symbol+dta
-                if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
+                if ln != "" and ln != " ":
+                    v.write(ln.replace("\\n",args.newline_symbol))
+                    bld+=args.div_symbol+dta
+                    if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
             except: pass

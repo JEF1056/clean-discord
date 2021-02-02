@@ -22,6 +22,8 @@ parser.add_argument('-max_len', type=int, default=2048,
                     help='max length of the dataset')
 parser.add_argument("-ascii", type=s2b, nargs='?', const=True, default=False,
                     help="debugging flag")
+parser.add_argument("-shuffle", type=s2b, nargs='?', const=True, default=False,
+                    help="debugging flag")
 args = parser.parse_args()
 
 def chunks(lst, n):
@@ -42,6 +44,9 @@ with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") 
     val=[e for i,e in enumerate(data) if dist[i]=="v"]
     del data
     del dist
+    if args.shuffle:
+        np.shuffle(train)
+        np.shuffle(val)
     for line in tqdm(train): 
         bld=line.split("\t")[0]
         for dta in line.split("\t")[1:]:

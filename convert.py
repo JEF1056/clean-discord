@@ -9,7 +9,7 @@ from src.helpers import *
 from datetime import datetime
 from src.validate import check_files
 
-import multiprocessing
+import threading
 
 parser = argparse.ArgumentParser(description='Clean Discord data')
 parser.add_argument('-dir', type=str, default="data",
@@ -22,8 +22,8 @@ parser.add_argument('-update_interval', type=int, default=1000,
                     help='TQDM update interval')
 parser.add_argument('-min_messages', type=int, default=2,
                     help='override the minimum number of messages that form a conversation')
-parser.add_argument('-workers', type=int, default=16,
-                    help='override the maximum number of workers to spawn')
+parser.add_argument('-threads', type=int, default=16,
+                    help='override the maximum number of threads to spawn')
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
                     help="turn on cache when reading files (uses a lot of memory)")
 parser.add_argument('-step', type=str, default="clean", choices=["clean", "nontoxic"],
@@ -142,7 +142,7 @@ if args.step == "clean":
 
     with io.open(os.path.join(args.out, "context.txt"), mode="w", encoding="utf-8") as f:  # initializes tqdm and the primary file to write to
         t1=time.time()
-        file_lock = multiprocessing.Lock()
+        file_lock = threading.Lock()
 
         def outputFunc_Primary(dat):
             file_lock.acquire()
@@ -156,24 +156,24 @@ if args.step == "clean":
                 file_lock.release()
         else:outputFunc_Pairs=None
 
-        workers = []
+        threads = []
         pbar=tqdm(total=len_all_messages, desc="Processing files")
 
         for file in all_data_files:  # loop through each file containing messages
-            if len(workers) == args.workers:
+            if len(threads) == args.threads:
                 pbar.set_description(f"Worker cap reached, waiting")
-                x = workers.pop(0)
+                x = threads.pop(0)
                 x.join()
             #print("Starting", all_data_files[i])
             pbar.set_description(f"Starting {file}")
             file_data = (all_messages[file] if type(all_messages) == tuple else json.load(io.open(os.path.join(args.dir, file), mode="r", encoding="utf-8"))["messages"])  # load the file or if cached, full it from memory
-            th = multiprocessing.Process(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
+            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
             th.start()
-            workers.append(th)
-        print("\nNo more workers left to start")
+            threads.append(th)
+        print("\nNo more threads left to start")
 
-        for i, th in enumerate(workers):
-            print(f"Joining worker {i+1}/{len(workers)}, waiting for end...", end=" ")
+        for i, th in enumerate(threads):
+            print(f"Joining worker {i+1}/{len(threads)}, waiting for end...", end=" ")
             th.join()
             print(f"Done in {round(time.time()-t1, 2)} seconds")
             

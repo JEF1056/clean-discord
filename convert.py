@@ -9,7 +9,7 @@ from src.helpers import *
 from datetime import datetime
 from src.validate import check_files
 
-import threading
+import multiprocessing
 
 parser = argparse.ArgumentParser(description='Clean Discord data')
 parser.add_argument('-dir', type=str, default="data",
@@ -22,8 +22,8 @@ parser.add_argument('-update_interval', type=int, default=1000,
                     help='TQDM update interval')
 parser.add_argument('-min_messages', type=int, default=2,
                     help='override the minimum number of messages that form a conversation')
-parser.add_argument('-threads', type=int, default=16,
-                    help='override the maximum number of threads to spawn')
+parser.add_argument('-workers', type=int, default=16,
+                    help='override the maximum number of workers to spawn')
 parser.add_argument("-cache", type=str2bool, nargs='?', const=True, default=False,
                     help="turn on cache when reading files (uses a lot of memory)")
 parser.add_argument('-step', type=str, default="clean", choices=["clean", "nontoxic"],
@@ -66,8 +66,7 @@ if (args.cache == False and args.step == "nontoxic") or args.step == "clean":
     with tqdm(all_data_files, desc="Reading files") as pbar:
         for file in pbar:
             if type(all_messages) == tuple:
-                all_messages[file] = json.load(io.open(os.path.join(args.dir, file), mode="r", encoding="utf-8"))[
-                    "messages"]
+                all_messages[file] = json.load(io.open(os.path.join(args.dir, file), mode="r", encoding="utf-8"))["messages"]
             else:
                 with open(os.path.join(args.dir, file), 'rb') as f:
                     f.seek(-2, os.SEEK_END)
@@ -78,66 +77,37 @@ if (args.cache == False and args.step == "nontoxic") or args.step == "clean":
             pbar.set_description(
                 f"Found {sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages) == tuple else all_messages} messages")
 
-    try:
-        os.mkdir(args.out)
-    except FileExistsError:
-        pass
-
-len_all_messages = (
-    sum([len(all_messages[msgs]) for msgs in all_messages])
-    if type(all_messages) == tuple
-    else all_messages
-)  # this is to determine the length of tqdm's progress bar
+try: os.mkdir(args.out)
+except FileExistsError: pass
+len_all_messages = (sum([len(all_messages[msgs]) for msgs in all_messages]) if type(all_messages) == tuple else all_messages)# this is to determine the length of tqdm's progress bar
 
 def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
     global disposed, completed, pbar
 
-    if args.pairs:  # generate a dict of messages and their index in messages
-        message_indexes = {msgdata["id"]: loc for loc, msgdata in enumerate(file_data)}
+    if args.pairs: message_indexes = {msgdata["id"]: loc for loc, msgdata in enumerate(file_data)} # generate a dict of messages and their index in messages
 
     last_known_name = ""
     last_known_time = 0
     build = ""
     
     for cstep, curr_message in enumerate(file_data):  # loop through the messages
-
         if not curr_message["author"]["isBot"]:  # ignore bots
-
             # time is formatted in a specific way, we need to convert it to a unix timestamp
-            today = time.mktime(
-                datetime.strptime(
-                    curr_message["timestamp"]
-                        .split(".")[0]
-                        .replace("+00:00", ""),
-                    "%Y-%m-%dT%H:%M:%S",
-                ).timetuple()
-            )
-
+            today = time.mktime(datetime.strptime(curr_message["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
             msg = clean(curr_message["content"])  # clean the message
 
-            if args.pairs:
-
-                # check if the message has a reply attached. if so, add it to the pairs
+            if args.pairs: # check if the message has a reply attached. if so, add it to the pairs
                 try:
                     source = curr_message["reference"]["messageId"]
-
-                    source_author = clean(
-                        file_data[message_indexes[source]]["author"]["name"],
-                        author=file_data[message_indexes[source]]["author"]["id"],
-                    )
-
+                    source_author = clean(file_data[message_indexes[source]]["author"]["name"], author=file_data[message_indexes[source]]["author"]["id"])
                     source_msg = clean(file_data[message_indexes[source]]["content"])
-
-                    # make sure the messages after being cleaned are not empty
-                    if source_msg is not None and msg is not None:
+                    if source_msg is not None and msg is not None:# make sure the messages after being cleaned are not empty
                         # write files instead of storing them to save memory
                         outFunc_Pairs(f"{source_author}: {source_msg}\t{clean(last_known_name, author=curr_message['author']['id'])}: {msg}\n")
-
                 except Exception:
                     pass
 
             if msg is not None:
-
                 # check if the author of the last message is also the author of this message
                 if curr_message["author"]["name"] != last_known_name or build == "":
                     last_known_name = curr_message["author"]["name"]
@@ -150,38 +120,29 @@ def clean_worker(file_data, outFunc_Primary, outFunc_Pairs):
 
             # if not the first message and 10 minutes have elapsed form the last message
             if today - last_known_time > args.conversation_timeout and last_known_time != 0:
-
                 # remove leading \n and \t if there are any
                 build = re.sub(r"^[\t\\n]+", "", build.replace("\n", "\\n"))
-
                 # check if the number of messages in the conversation is >2
                 if len(build.split("\t")) >= args.min_messages and build != "":
                     outFunc_Primary(build + "\n")  # write the conversation
                     completed += 1
                 else:
                     disposed += 1
-
                 build = ""  # reset the last known people
                 last_known_name = ""
             last_known_time = today  # save the time of the current message
-
-        else:
-            disposed += 1
+        else: disposed += 1
         if cstep % args.update == 0: pbar.update(args.update)
     del file_data
 
 
 if args.step == "clean":
     if args.pairs:
-        p = io.open(
-            os.path.join(args.out, "context-pairs.txt"), mode="w", encoding="utf-8"
-        )  # i don't think that you need to multithread these, unless there is a way to do that
+        p = io.open(os.path.join(args.out, "context-pairs.txt"), mode="w", encoding="utf-8") 
 
-    with io.open(
-            os.path.join(args.out, "context.txt"), mode="w", encoding="utf-8"
-    ) as f:  # initializes tqdm and the primary file to write to
+    with io.open(os.path.join(args.out, "context.txt"), mode="w", encoding="utf-8") as f:  # initializes tqdm and the primary file to write to
         t1=time.time()
-        file_lock = threading.Lock()
+        file_lock = multiprocessing.Lock()
 
         def outputFunc_Primary(dat):
             file_lock.acquire()
@@ -195,42 +156,29 @@ if args.step == "clean":
                 file_lock.release()
         else:outputFunc_Pairs=None
 
-        threads = []
+        workers = []
         pbar=tqdm(total=len_all_messages, desc="Processing files")
 
         for file in all_data_files:  # loop through each file containing messages
-            
-            if len(threads) == args.threads:
-                pbar.set_description(f"Thread cap reached, waiting")
-                x = threads.pop(0)
+            if len(workers) == args.workers:
+                pbar.set_description(f"Worker cap reached, waiting")
+                x = workers.pop(0)
                 x.join()
-
             #print("Starting", all_data_files[i])
             pbar.set_description(f"Starting {file}")
-
-            file_data = (
-                all_messages[file]
-                if type(all_messages) == tuple
-                else json.load(
-                    io.open(os.path.join(args.dir, file), mode="r", encoding="utf-8")
-                )["messages"]
-            )  # load the file or if cached, full it from memory
-            
-            th = threading.Thread(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
+            file_data = (all_messages[file] if type(all_messages) == tuple else json.load(io.open(os.path.join(args.dir, file), mode="r", encoding="utf-8"))["messages"])  # load the file or if cached, full it from memory
+            th = multiprocessing.Process(target=clean_worker, args=(file_data, outputFunc_Primary, outputFunc_Pairs))
             th.start()
-            threads.append(th)
+            workers.append(th)
+        print("\nNo more workers left to start")
 
-        print("\nNo more threads left to start")
-
-        for i, th in enumerate(threads):
-            print(f"Joining thread {i+1}/{len(threads)}, waiting for end...", end=" ")
+        for i, th in enumerate(workers):
+            print(f"Joining worker {i+1}/{len(workers)}, waiting for end...", end=" ")
             th.join()
             print(f"Done in {round(time.time()-t1, 2)} seconds")
-
+            
     del all_messages
-
-    if args.pairs:
-        p.close()  # close the files
+    if args.pairs: p.close()  # close the files
 
 
 if args.step == "nontoxic" or args.nontoxic != None:
@@ -239,7 +187,7 @@ if args.step == "nontoxic" or args.nontoxic != None:
                         encoding="utf-8").read().strip().split("\n")
     with io.open(os.path.join(args.out, "context-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc=f"Processing messages {args.nontoxic}ly") as pbar:
-            if args.nontoxic == "fast":
+            if args.nontoxic == "slow":
                 from better_profanity import profanity
                 badwords=io.open("src/badwords.txt", mode="r", encoding="utf-8").read().strip().split("\n")
                 profanity.load_censor_words(badwords)
@@ -259,13 +207,12 @@ if args.step == "nontoxic" or args.nontoxic != None:
                     else:
                         to_write="\t".join(to_write)
                         f.write(to_write+"\n") 
-            elif args.nontoxic == "slow":
+            elif args.nontoxic == "fast":
                 from tox_block.prediction import make_predictions as detect
                 batch = []
                 for curr_index, conversation in enumerate(pbar):
                     batch.append(conversation)
-                    if curr_index == len(to_clean) - 1 or sum(
-                            [len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
+                    if curr_index == len(to_clean) - 1 or sum([len(msgs.strip().split("\t")) for msgs in batch]) >= args.batches:
                         batch_placement, sents = [0], []
                         for conv in batch:
                             splt= list(filter(None, conv.strip().split("\t")))

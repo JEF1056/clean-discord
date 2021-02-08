@@ -221,7 +221,6 @@ if args.step == "nontoxic" or args.nontoxic != None:
                             batch_placement.append(len(splt))
                         prediction_vals=model.predict(sents)
                         vscores=[]
-                        print(len(prediction_vals["toxicity"]))
                         for index in range(len(prediction_vals["toxicity"])):
                             temp=[]
                             for classification in prediction_vals:

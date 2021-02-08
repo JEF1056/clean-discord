@@ -209,7 +209,7 @@ if args.step == "nontoxic" or args.nontoxic != None:
                         f.write(to_write+"\n") 
             elif args.nontoxic == "fast":
                 from detoxify import Detoxify
-                model = Detoxify('unbiased-small', device='cuda')
+                model = Detoxify('unbiased-small')
                 batch = []
                 for curr_index, conversation in enumerate(pbar):
                     batch.append(conversation)

@@ -208,8 +208,7 @@ if args.step == "nontoxic" or args.nontoxic != None:
                         to_write="\t".join(to_write)
                         f.write(to_write+"\n") 
             elif args.nontoxic == "fast":
-                from detoxify import Detoxify
-                model = Detoxify('unbiased-small')
+                from tox_block.prediction import make_predictions as detect
                 batch = []
                 for curr_index, conversation in enumerate(pbar):
                     batch.append(conversation)
@@ -219,14 +218,8 @@ if args.step == "nontoxic" or args.nontoxic != None:
                             splt= list(filter(None, conv.strip().split("\t")))
                             sents.extend(list(filter(None, [remove.replace("\\n","\n").strip() for remove in splt]))) #not sure currently if the tox-block model is affected by "\\n", experiment?
                             batch_placement.append(len(splt))
-                        prediction_vals=model.predict(sents)
-                        vscores=[]
-                        for index in range(len(prediction_vals["toxicity"])):
-                            temp=[]
-                            for classification in prediction_vals:
-                                temp.append(prediction_vals[classification][index])
-                            vscores.append(temp)
-                        scores=[max(detection) for detection in vscores]
+                        prediction_vals=detect(sents)
+                        scores=[max(list(dict(prediction_vals[detection]).values())[1:]) for detection in prediction_vals]
                         offsets=[sum(batch_placement[0:i]) for i in range(1,len(batch_placement))]
                         for ind, batch_score in enumerate([scores[sum(batch_placement[0:i]):sum(batch_placement[0:i])+batch_placement[i]] for i in range(1,len(batch_placement))]):
                             to_write=[]

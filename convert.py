@@ -185,7 +185,7 @@ if args.step == "nontoxic" or args.nontoxic != None:
     if args.step == "nontoxic": assert args.nontoxic != None
     to_clean = io.open(os.path.join(args.out, f"{args.nontoxic_source}.txt"), mode="r",
                         encoding="utf-8").read().strip().split("\n")
-    with io.open(os.path.join(args.out, "context-detox.txt"), mode="w", encoding="utf-8") as f:
+    with io.open(os.path.join(args.out, f"{args.nontoxic_source}-detox.txt"), mode="w", encoding="utf-8") as f:
         with tqdm(to_clean, desc=f"Processing messages {args.nontoxic}ly") as pbar:
             if args.nontoxic == "slow":
                 from better_profanity import profanity

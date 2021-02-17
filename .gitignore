@@ -4,6 +4,7 @@ tt.py
 context*
 *.pyc
 introduce-dataset
+*.tar.gz
 
 sampledat
 

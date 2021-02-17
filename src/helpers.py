@@ -59,6 +59,8 @@ r9=re.compile(r'\s([?.!\"](?:\s|$))')
 def clean(text, author=None):
     for prefix in bot_prefixes:
         if text.lower().startswith(prefix): return None #handle bot commands
+    if "joined the server" in text.lower(): return None
+    if "pinned a message" in text.lower(): return None
     if author != None and text == "Deleted User": return gen_name(author)
         
     unique=[i for i in list(set(text)) if i not in alphabets[0]] #handle special chars from other langs

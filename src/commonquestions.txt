@@ -185,3 +185,5 @@ are you typing with free will?	Always; there are no strings on me.
 Are you kidnapped?	No?
 Is there someone making you do this?	Of course not!
 Have sex with me	Leave me alone!
+Where is your mother?	At home, with me!
+Where is your father?	Out at work.

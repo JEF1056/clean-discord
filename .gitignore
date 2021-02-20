@@ -5,6 +5,7 @@ context*
 *.pyc
 introduce-dataset
 *.tar.gz
+commonq
 
 sampledat
 

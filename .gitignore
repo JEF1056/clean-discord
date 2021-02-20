@@ -6,7 +6,6 @@ context*
 introduce-dataset
 *.tar.gz
 commonq
-
 sampledat
 
 # Created by https://www.toptal.com/developers/gitignore/api/jetbrains+all,python,vscode

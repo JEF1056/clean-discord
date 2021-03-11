@@ -1,4 +1,5 @@
 import io
+import itertools
 import re
 import random
 import argparse
@@ -55,6 +56,7 @@ r6=re.compile(r"\s(.+?)\1+\s", re.IGNORECASE)
 r7=re.compile(r'@Deleted User')
 r8=re.compile(r"([\s!?@\"\'])\1+")
 r9=re.compile(r'\s([?.!\"](?:\s|$))')
+r10=re.compile(r"^(?!my|\bdm\b|server|location|located)[a-z]+\s??(?!my|\bdm\b|server|location|located)[a-z]+\s??:[a-z0-9/.,\'\" ]{1,40}$", flags=re.M | re.IGNORECASE)
 
 def clean(text, author=None):
     for prefix in bot_prefixes:
@@ -82,3 +84,48 @@ def clean(text, author=None):
         return text.split(" ")[-1]
     else:
         return None
+    
+def gen_permuatations(name, info, shuffle=False):
+    carrier=["who is", "who's", "that's", "that is"]
+    outputs=[]
+    all_combs=[]
+    try:  del info["name"]
+    except: pass
+    [all_combs.extend(list(itertools.combinations(info, r))) for r in range(1,len(info)+1)]
+    #name: [LITERAL JSON]
+    #name: [LITERAL JSON WITHOUT BRACKETS]
+    #name [LITERAL JSON]
+    #name [LITERAL JSON WITHOUT BRACKETS]
+    #[name][:/no :] ([x], [y], [z]...) (in vague/random order)
+    #[name] [carrier] [x] [delimiter] [y] [delimiter] [z]... (in vague/random order)
+    for comb in all_combs:
+        get_perms=[[f"{combd}: {info[combd]}" for combd in perms] for perms in itertools.permutations(comb)]
+        for get_json in get_perms:
+            outputs.extend([name+": {"+", ".join(get_json)+"}",
+                            f"{name}, {', '.join(get_json)}",
+                            f"{name}: {', '.join(get_json)}",
+                            f"{name}: [{', '.join(get_json)}]",
+                            f"{name}: ({', '.join(get_json)})",
+                            f"{name} ({', '.join(get_json)})",
+                            f"{name}: ({', '.join([i.split(': ')[1].strip() for i in get_json])})",
+                            f"{name} ({', '.join([i.split(': ')[1].strip() for i in get_json])})"
+                            ]+
+                           [f"{name} {carry} {' and '.join([i.split(': ')[1].strip() for i in get_json])}" for carry in carrier]+
+                           [f"{name} {carry} {', '.join([i.split(': ')[1].strip() for i in get_json])}" for carry in carrier]
+                            )
+    return outputs
+    
+def extract_fields(message, shuffle=False):
+    #NOTE: message should include a "\t" in it
+    assert "\t" in message, "tab not found in message"
+    assert len(message.split("\t")) == 2, f"more than one tab in message: "+str(len(message.split('\t')))
+    input_str, output_str=[i.strip() for i in message.split("\t")]
+    extracted={e[0].lower():e[1] for e in [[v.strip() for v in i.split(":")] for i in re.findall(r10, output_str)]}
+    if extracted == None: return None
+    
+    output=[]
+    output.extend(gen_permuatations(input_str, extracted))
+    if "name" in extracted: output.extend(gen_permuatations(extracted["name"], extracted))
+    output=[f"{inp}\{message}" for inp in output]
+    
+    return output

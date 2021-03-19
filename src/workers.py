@@ -35,7 +35,7 @@ def gen_name(username):
     except: return "@"+random.choice(names)
     
 #precompile regex
-r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[:.,!?()]) (?=[:.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!:[3\)\>])[^a-z0-9.,!?\s\/\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+', flags=re.DOTALL | re.IGNORECASE)
+r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[:.,!?()]) (?=[:.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!:[3\)\>])[^a-z0-9.,\'@!?\s\/\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+', flags=re.DOTALL | re.IGNORECASE)
 r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]{2,}')
 r3=re.compile(r"([\.\'\"@?!a-z])\1{3,}|([\s!?@\"\'])\2+|\s([?.!\"](?:\s|$))", re.IGNORECASE)
 r4=re.compile(r'@Deleted User')
@@ -63,27 +63,40 @@ def clean(text, author=None):
 
 def worker(filename, input_folder, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    messages, fst=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True
+    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"server": filename[:-5],"conversations":0,"messages":0}
     with io.open(os.path.join(output_folder,filename.replace(".json",".txt")), mode="w", encoding="utf-8") as f:
         msg, last_seen, last_author=[],0,""
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
                 content, author=clean(data["content"]),clean(data["author"]["name"], author=data["author"]["id"])
                 if content != None:
-                    if last_author != author or len(msg)==0:
-                        msg.append(f'{author}: {content}')
-                        curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
-                        if len(msg)==21 or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
-                            msg="/b".join(msg)
-                            if fst: f.write(msg); fst=False
-                            else: f.write("\n"+msg)
-                            msg=[]; last_author=""
-                        last_author = author
-                    else:
-                        msg[len(msg)-1]+=f"/n{content}"
+                    try:
+                        if last_author != author or len(msg)==0:
+                            msg.append(f'{author}: {content}')
+                            count["messages"]+=1
+                            curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
+                            if len(msg)==21 or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
+                                msg="/b".join(msg)
+                                if fst: f.write(msg); fst=False
+                                else: f.write("\n"+msg)
+                                msg=[]; last_author=""; count["conversations"]+=1
+                            last_author = author
+                        else:
+                            msg[len(msg)-1]+=f"/n{content}"
+                    except Exception as e:
+                        print(e)
             last_seen = curr_time
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
-    return "Done"
+    return count
 
 if __name__ == '__main__':
-    worker("test1.json", "data", "output", debug=True)
+    import argparse
+    parser = argparse.ArgumentParser(description='Clean Discord data')
+    parser.add_argument('-file', type=str, default="data json",
+                        help='data json file')
+    parser.add_argument('-dir', type=str, default="data",
+                        help='the fonlder that contains the data file')
+    parser.add_argument('-out', type=str, default="output",
+                        help='the folder to output txts')
+    args = parser.parse_args()
+    worker(args.file, "data", "output", debug=True)

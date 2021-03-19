@@ -76,9 +76,9 @@ def worker(filename, input_folder, output_folder, debug=False):
                             count["messages"]+=1
                             curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
                             if curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1:
-                                msg="/b".join(msg)
+                                msg="\t".join(msg)
                                 if fst: f.write(msg); fst=False
-                                else: f.write("\n"+msg)
+                                else: f.write("\\n"+msg)
                                 msg=[]; last_author=""; curr_time=0; count["conversations"]+=1
                             last_author = author
                         else:

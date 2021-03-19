@@ -3,6 +3,8 @@ import io
 import os
 import ijson
 import random
+import time
+from datetime import datetime
 from pyinstrument import Profiler
 
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
@@ -33,8 +35,8 @@ def gen_name(username):
     except: return "@"+random.choice(names)
     
 #precompile regex
-r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[:.,!?()]) (?=[:.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!:3)[^a-z0-9.,!@?\s\/\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+', flags=re.DOTALL | re.IGNORECASE)
-r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]+')
+r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[:.,!?()]) (?=[:.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!:[3\)\>])[^a-z0-9.,!?\s\/\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+', flags=re.DOTALL | re.IGNORECASE)
+r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]{2,}')
 r3=re.compile(r"([\.\'\"@?!a-z])\1{3,}|([\s!?@\"\'])\2+|\s([?.!\"](?:\s|$))", re.IGNORECASE)
 r4=re.compile(r'@Deleted User')
 
@@ -46,33 +48,42 @@ def clean(text, author=None):
     for char in unique: 
         try: text=text.replace(char, normalize_chars[char])
         except:pass
-        
+    if author == None: text= re.sub(r4, gen_name, text) #replace "deleted users" with names
     text= re.sub(r1, "", text.strip()) #remove urls, emails, code blocks, custom emojis, spaces between punctuation, non-emoji, punctuation, letters, and phone numbers
     text= re.sub(r2, " ", text) #handle... interesting spaces
     text= re.sub(r3, r"\1\1\1\2\3", text) #handle excessive repeats of punctuation, limited to 3, repeated words, excessive spaces or excessive punctuation, spaces before punctuation but after text
-    if author == None: text= re.sub(r4, gen_name, text) #replace "deleted users" with names
-    text= text.strip().replace("\n","\\n") #handle newlines
+    text= text.strip().replace("\n","\\n").strip("\\n").strip("\t") #handle newlines
     
     if text != "\\n" and text != " " and text != "" and author==None:
         return text
     elif text != "\\n" and text != " " and text != "" and author!=None:
-        return text.split(" ")[-1]
+        return " ".join(text.split(" ")[-2:])
     else:
         return None
 
-def worker(filename, input_folder, output_folder):
-    profiler = Profiler()
-    profiler.start()
-    messages=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item')
+def worker(filename, input_folder, output_folder, debug=False):
+    if debug: profiler = Profiler(); profiler.start()
+    messages, fst=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True
     with io.open(os.path.join(output_folder,filename.replace(".json",".txt")), mode="w", encoding="utf-8") as f:
+        msg, last_seen, last_author=[],0,""
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
-                data["content"]=data["content"].replace("\n","\\n")
-                f.write(f'{clean(data["author"]["name"], author=data["author"]["id"])}\t{clean(data["content"])}\n')
-                #f.write(f'{data["author"]["name"]}\t{data["content"]}\n')
-    profiler.stop()
-    profiler.open_in_browser()
+                content, author=clean(data["content"]),clean(data["author"]["name"], author=data["author"]["id"])
+                if content != None:
+                    if last_author != author or len(msg)==0:
+                        msg.append(f'{author}: {content}')
+                        curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
+                        if len(msg)==21 or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
+                            msg="/b".join(msg)
+                            if fst: f.write(msg); fst=False
+                            else: f.write("\n"+msg)
+                            msg=[]; last_author=""
+                        last_author = author
+                    else:
+                        msg[len(msg)-1]+=f"/n{content}"
+            last_seen = curr_time
+    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
     return "Done"
 
 if __name__ == '__main__':
-    worker("test.json", "data", "output")
+    worker("test1.json", "data", "output", debug=True)

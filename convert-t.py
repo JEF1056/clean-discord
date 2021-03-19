@@ -32,7 +32,7 @@ def start_work():
             new_ret[val["channel"]]={"messages": new_ret[val["channel"]]["messages"]+val["messages"], "conversations": new_ret[val["channel"]]["conversations"]+val["conversations"]}
         except:
             new_ret[val["channel"]]={"messages": val["messages"], "conversations": val["conversations"]}
-    json.dump({"messages_total":messages_total,"conversations_total":conversations_total,"individual":ret, "merged":new_ret}, open(os.path.join(args.out,"stats.json"),"w"))
+    json.dump({"messages_total":messages_total,"conversations_total":conversations_total, "num_files":len(ret), "num_channels":len(new_ret), "individual":ret, "merged":new_ret}, open(os.path.join(args.out,"stats.json"),"w"))
         
 if __name__ == '__main__':
     start_work()

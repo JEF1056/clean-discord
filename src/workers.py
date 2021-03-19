@@ -61,9 +61,9 @@ def clean(text, author=None):
     else:
         return None
 
-def worker(filename, input_folder, output_folder, debug=False):
+def worker(filename, input_folder, output_folder, max_context=1000, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"server": filename[:-5],"conversations":0,"messages":0}
+    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename[:-5]).group(0),"conversations":0,"messages":0}
     with io.open(os.path.join(output_folder,filename.replace(".json",".txt")), mode="w", encoding="utf-8") as f:
         msg, last_seen, last_author, curr_time=[],0,"",0
         for data in messages:
@@ -75,14 +75,14 @@ def worker(filename, input_folder, output_folder, debug=False):
                             msg.append(f'{author}: {content}')
                             count["messages"]+=1
                             curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
-                            if curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1:
+                            if len(msg)==max_context or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
                                 msg="\t".join(msg)
                                 if fst: f.write(msg); fst=False
-                                else: f.write("\\n"+msg)
-                                msg=[]; last_author=""; curr_time=0; count["conversations"]+=1
+                                else: f.write("\n"+msg)
+                                msg=[]; last_author=""; last_seen=0; count["conversations"]+=1
                             last_author = author
                         else:
-                            msg[len(msg)-1]+=f"/n{content}"
+                            msg[len(msg)-1]+=f"\\n{content}"
                     except Exception as e:
                         print(e,"   from file:", filename)
             last_seen = curr_time
@@ -99,4 +99,4 @@ if __name__ == '__main__':
     parser.add_argument('-out', type=str, default="output",
                         help='the folder to output txts')
     args = parser.parse_args()
-    worker(args.file, args.dir, args.out, debug=True)
+    print(worker(args.file, args.dir, args.out, debug=True))

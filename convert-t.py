@@ -18,9 +18,11 @@ args = parser.parse_args()
 try:os.mkdir(args.out)
 except: pass
 
+tasks=[m for m in os.listdir(args.dir) if m not in os.listdir(args.out)]
+
 def start_work():
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker, os.listdir(args.dir), repeat(args.dir), repeat(args.out)), total=len(os.listdir(args.dir))))
+        ret=list(tqdm(executor.map(worker, tasks, repeat(args.dir), repeat(args.out)), total=len(tasks)))
     print(ret)
         
 if __name__ == '__main__':

@@ -13,8 +13,6 @@ parser.add_argument('-out', type=str, default="output",
                     help='the folder to output txts')
 parser.add_argument('-workers', type=int, default=None,
                     help='the folder to output txts')
-parser.add_argument('-workers', type=int, default=None,
-                    help='the folder to output txts')
 args = parser.parse_args()
 
 try:os.mkdir(args.out)

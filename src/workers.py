@@ -84,7 +84,7 @@ def worker(filename, input_folder, output_folder, debug=False):
                         else:
                             msg[len(msg)-1]+=f"/n{content}"
                     except Exception as e:
-                        print(e)
+                        print(e,"   from file:", filename)
             last_seen = curr_time
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
     return count

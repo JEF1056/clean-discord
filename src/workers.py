@@ -99,4 +99,4 @@ if __name__ == '__main__':
     parser.add_argument('-out', type=str, default="output",
                         help='the folder to output txts')
     args = parser.parse_args()
-    worker(args.file, "data", "output", debug=True)
+    worker(args.file, args.dir, args.out, debug=True)

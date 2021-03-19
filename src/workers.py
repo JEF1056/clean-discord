@@ -70,21 +70,18 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
                 content, author=clean(data["content"]),clean(data["author"]["name"], author=data["author"]["id"])
                 if content != None:
-                    try:
-                        if last_author != author or len(msg)==0:
-                            msg.append(f'{author}: {content}')
-                            count["messages"]+=1
-                            curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
-                            if len(msg)==max_context or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
-                                msg="\t".join(msg)
-                                if fst: f.write(msg); fst=False
-                                else: f.write("\n"+msg)
-                                msg=[]; last_author=""; last_seen=0; count["conversations"]+=1
-                            last_author = author
-                        else:
-                            msg[len(msg)-1]+=f"\\n{content}"
-                    except Exception as e:
-                        print(e,"   from file:", filename)
+                    if last_author != author or len(msg)==0:
+                        msg.append(f'{author}: {content}')
+                        count["messages"]+=1
+                        curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
+                        if len(msg)==max_context or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
+                            msg="\t".join(msg)
+                            if fst: f.write(msg); fst=False
+                            else: f.write("\n"+msg)
+                            msg=[]; last_author=""; last_seen=0; count["conversations"]+=1
+                        last_author = author
+                    else:
+                        msg[len(msg)-1]+=f"\\n{content}"
             last_seen = curr_time
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
     return count

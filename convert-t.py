@@ -24,7 +24,9 @@ tasks=[m for m in os.listdir(args.dir) if m[:-5]+".txt" not in os.listdir(args.o
 def start_work():
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
         ret=list(tqdm(executor.map(worker, tasks, repeat(args.dir), repeat(args.out)), total=len(tasks)))
-    json.dump(ret, open(os.path.join(args.out,"stats.json"),"w"))
+    messages_total, conversations_total=0,0
+    for val in ret: messages_total+=val["messages"]; conversations_total+=val["conversations"]
+    json.dump({"messages+total":messages_total,"conversations_total":conversations_total,"individual":ret}, open(os.path.join(args.out,"stats.json"),"w"))
         
 if __name__ == '__main__':
     start_work()

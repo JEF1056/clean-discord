@@ -64,7 +64,8 @@ def clean(text, author=None):
 def worker(filename, input_folder, output_folder, max_context=1000, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0}
-    with io.open(os.path.join(output_folder,re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)+".txt"), mode="w", encoding="utf-8") as f:
+    ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
+    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
         msg, last_seen, last_author, curr_time=[],0,"",0
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
@@ -83,8 +84,21 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
                     else:
                         msg[len(msg)-1]+=f"\\n{content}"
             last_seen = curr_time
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
     return count
+
+class worker_detox():
+    def __init__(self, model, device="cuda", debug=False):
+        from detoxify import Detoxify
+        self.model=Detoxify(model, device=device)
+        self.debug=debug
+    
+    def clean(self):
+        if self.debug: profiler = Profiler(); profiler.start()
+        
+    
+    
 
 if __name__ == '__main__':
     import argparse

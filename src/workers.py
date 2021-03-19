@@ -75,7 +75,7 @@ def worker(filename, input_folder, output_folder, debug=False):
                             msg.append(f'{author}: {content}')
                             count["messages"]+=1
                             curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
-                            if len(msg)==21 or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
+                            if curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1:
                                 msg="/b".join(msg)
                                 if fst: f.write(msg); fst=False
                                 else: f.write("\n"+msg)

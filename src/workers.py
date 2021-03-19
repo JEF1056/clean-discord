@@ -35,7 +35,7 @@ def gen_name(username):
     except: return "@"+random.choice(names)
     
 #precompile regex
-r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[:.,!?()]) (?=[:.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!:[3\)\>D\(\<])[^a-z0-9.,\'@!?\s\/\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+', flags=re.DOTALL | re.IGNORECASE)
+r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+', flags=re.DOTALL | re.IGNORECASE)
 r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]{2,}')
 r3=re.compile(r"([\.\'\"@?!a-z])\1{3,}|([\s!?@\"\'])\2+|\s([?.!\"](?:\s|$))", re.IGNORECASE)
 r4=re.compile(r'@Deleted User')
@@ -63,8 +63,8 @@ def clean(text, author=None):
 
 def worker(filename, input_folder, output_folder, max_context=1000, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename[:-5]).group(0),"conversations":0,"messages":0}
-    with io.open(os.path.join(output_folder,filename.replace(".json",".txt")), mode="w", encoding="utf-8") as f:
+    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0}
+    with io.open(os.path.join(output_folder,re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)+".txt"), mode="w", encoding="utf-8") as f:
         msg, last_seen, last_author, curr_time=[],0,"",0
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:

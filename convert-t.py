@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import argparse
 from tqdm import tqdm
@@ -19,7 +20,8 @@ args = parser.parse_args()
 try:os.mkdir(args.out)
 except: pass
 
-tasks=[m for m in os.listdir(args.dir) if m[:-5]+".txt" not in os.listdir(args.out)]
+#use \[\d{18}\](?:\s\[part \d{1,3}\])* instead
+tasks=[m for m in os.listdir(args.dir) if re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", m).group(0)+".txt" not in os.listdir(args.out)]
 
 def start_work():
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:

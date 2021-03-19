@@ -89,11 +89,9 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Clean Discord data')
-    parser.add_argument('-file', type=str, default="data json",
-                        help='data json file')
     parser.add_argument('-dir', type=str, default="data",
                         help='the fonlder that contains the data file')
     parser.add_argument('-out', type=str, default="output",
                         help='the folder to output txts')
     args = parser.parse_args()
-    print(worker(args.file, args.dir, args.out, debug=True))
+    print(worker(os.listdir(args.dir)[0], args.dir, args.out, debug=True))

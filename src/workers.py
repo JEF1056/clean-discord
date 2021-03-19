@@ -65,7 +65,7 @@ def worker(filename, input_folder, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"server": filename[:-5],"conversations":0,"messages":0}
     with io.open(os.path.join(output_folder,filename.replace(".json",".txt")), mode="w", encoding="utf-8") as f:
-        msg, last_seen, last_author=[],0,""
+        msg, last_seen, last_author, curr_time=[],0,"",0
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
                 content, author=clean(data["content"]),clean(data["author"]["name"], author=data["author"]["id"])
@@ -79,7 +79,7 @@ def worker(filename, input_folder, output_folder, debug=False):
                                 msg="/b".join(msg)
                                 if fst: f.write(msg); fst=False
                                 else: f.write("\n"+msg)
-                                msg=[]; last_author=""; count["conversations"]+=1
+                                msg=[]; last_author=""; curr_time=0; count["conversations"]+=1
                             last_author = author
                         else:
                             msg[len(msg)-1]+=f"/n{content}"

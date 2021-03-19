@@ -19,6 +19,7 @@ try:os.mkdir(args.out)
 except: pass
 
 tasks=[m for m in os.listdir(args.dir) if m not in os.listdir(args.out)]
+print(os.listdir(args.out))
 
 def start_work():
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:

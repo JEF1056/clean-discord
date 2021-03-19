@@ -13,13 +13,14 @@ parser.add_argument('-out', type=str, default="output",
                     help='the folder to output txts')
 parser.add_argument('-workers', type=int, default=None,
                     help='the folder to output txts')
+parser.add_argument('-workers', type=int, default=None,
+                    help='the folder to output txts')
 args = parser.parse_args()
 
 try:os.mkdir(args.out)
 except: pass
 
 tasks=[m for m in os.listdir(args.dir) if m[:-5]+".txt" not in os.listdir(args.out)]
-print(os.listdir(args.out))
 
 def start_work():
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
@@ -27,4 +28,5 @@ def start_work():
     print(ret)
         
 if __name__ == '__main__':
+    check_files(args.dir)
     start_work()

@@ -129,6 +129,7 @@ class worker_detox():
             del all_msgs
 
             #now we have proper batches yayyy, time to crush them in the AI
+            print("batch done")
             print(self.model.predict(batches[0].replace("\b","").split("\t")))
             
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
 tqdm
 pyinstrument
 ijson
-detoxify
+profanityfilter

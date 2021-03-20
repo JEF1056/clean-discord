@@ -6,6 +6,7 @@ context*
 introduce-dataset
 *.tar.gz
 commonq
+*.temp
 *.txt
 *.json
 sampledat
@@ -252,3 +253,4 @@ dmypy.json
 
 data
 # End of https://www.toptal.com/developers/gitignore/api/jetbrains+all,python,vscode
+src/workers.py

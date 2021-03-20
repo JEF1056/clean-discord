@@ -5,10 +5,10 @@ import time
 import json
 import ijson
 import random
-import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 from pyinstrument import Profiler
+from profanityfilter import ProfanityFilter
 
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
     'Å':'A', 'Æ':'A', 'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E', 'Ì':'I', 'Í':'I', 'Î':'I',
@@ -19,6 +19,7 @@ normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á
     'ú':'u', 'û':'u', 'ü':'u', 'ý':'y', 'ý':'y', 'þ':'b', 'ÿ':'y', 'ƒ':'f',
     'ă':'a', 'î':'i', 'â':'a', 'ș':'s', 'ț':'t', 'Ă':'A', 'Î':'I', 'Â':'A', 'Ș':'S', 'Ț':'T',}
 alphabets=io.open("src/alphabets.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+emojis=json.load(io.open("src/emojis.json", mode="r", encoding="utf-8"))
 for alphabet in alphabets[1:]:
     for ind, char in enumerate(alphabet):
         try:normalize_chars[char]=alphabets[0][ind]
@@ -37,11 +38,22 @@ def gen_name(username):
         return out_name
     except: return "@"+random.choice(names)
     
+def write_stats(ret, dir):
+    messages_total, conversations_total, removed_total, new_ret=0,0,0, {}
+    for val in ret:
+        messages_total+=val["messages"]
+        conversations_total+=val["conversations"]
+        removed_total+=val["removed_messages"]
+        try: new_ret[val["channel"]]={"messages": new_ret[val["channel"]]["messages"]+val["messages"], "conversations": new_ret[val["channel"]]["conversations"]+val["conversations"]}
+        except: new_ret[val["channel"]]={"messages": val["messages"], "conversations": val["conversations"]}
+    json.dump({"messages_total":messages_total,"conversations_total":conversations_total, "removed_total":removed_total, "num_files":len(ret), "num_channels":len(new_ret), "individual":ret, "merged":new_ret}, open(os.path.join(dir,"stats.json"),"w"))
+    
 #precompile regex
-r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/\U0001F600-\U0001F64F\U0001F300-\U0001F5FF]+', flags=re.DOTALL | re.IGNORECASE)
+r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/'+"".join(emojis)+r']+', flags=re.DOTALL | re.IGNORECASE)
 r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]{2,}')
 r3=re.compile(r"([\.\'\"@?!a-z])\1{3,}|([\s!?@\"\'])\2+|\s([?.!\"](?:\s|$))", re.IGNORECASE)
 r4=re.compile(r'@Deleted User')
+r5=re.compile(r'['+"".join(emojis)+r']')
 
 def clean(text, author=None):
     if text.lower().startswith(bot_prefixes): return None #handle bot commands
@@ -96,6 +108,34 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
     return count
 
 class worker_detox():
+    def __init__(self):
+        self.pf=ProfanityFilter()
+    
+    def clean(self, filename, input_folder, output_folder, debug=False):
+        if debug: profiler = Profiler(); profiler.start()
+        file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
+        ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
+        with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
+            while True:
+                line = file_data.readline().strip()
+                if not line:
+                    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+                    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
+                    return count
+                count["conversations"]+=1
+                outline=[]
+                for msg in tqdm(line.split("\t")):
+                    if self.pf.is_clean(msg):
+                        outline.append(msg)
+                        count["messages"]+=1
+                    else:
+                        count["removed_messages"]+=1
+                if fst: f.write("\t".join(outline)); fst=False
+                else: f.write("\n"+"\t".join(outline))
+                #if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True)); return count
+
+"""
+class worker_detox():
     def __init__(self, model, device="cuda", char_limit=5000):
         from detoxify import Detoxify
         self.model=Detoxify(model, device=device)
@@ -144,6 +184,7 @@ class worker_detox():
                 messages=len(np.array(all_msgs)[msg])
                 if fst: f.write(msg); fst=False
                 else: f.write("\n"+msg)
+"""
             
 if __name__ == '__main__':
     import argparse
@@ -154,10 +195,10 @@ if __name__ == '__main__':
                         help='the folder to output txts')
     parser.add_argument('-step', type=str, default="all",
                         help='the step to start cleaning from')
-    parser.add_argument("-device", type=str, default="cpu", choices=["cpu", "cuda"],
-                        help="device detoxify should use")
-    parser.add_argument("-char_limit", type=int, default=30000,
-                        help="device detoxify should use")
+    #parser.add_argument("-device", type=str, default="cpu", choices=["cpu", "cuda"],
+    #                    help="device detoxify should use")
+    #parser.add_argument("-char_limit", type=int, default=30000,
+    #                    help="device detoxify should use")
     args = parser.parse_args()
     if args.step == "all":
         steps=["regex", "pairs", "detox"]
@@ -174,7 +215,8 @@ if __name__ == '__main__':
             print("Pairs test not implemented")
             pass #not implemented
         elif step == "detox":
-            print(f"Running debug test on {args.device}")
-            detox_worker=worker_detox("unbiased-small", args.device, char_limit=args.char_limit)
-            print(detox_worker.clean([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True))
+            print(f"Running detox test")
+            detox_worker=worker_detox()
+            ret=[detox_worker.clean([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True)]
+            write_stats(ret, args.out+"-detox")
     print("DONE")

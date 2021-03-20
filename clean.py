@@ -6,7 +6,7 @@ from tqdm import tqdm
 import concurrent.futures
 from itertools import repeat
 from src.validate import check_files
-from src.workers import worker, worker_detox
+from src.workers import worker, worker_detox, write_stats
 
 def str2bool(v):
     if isinstance(v, bool): return v
@@ -32,15 +32,6 @@ parser.add_argument("-device", type=str, default="cuda", choices=["cpu", "cuda"]
 parser.add_argument("-overwrite", type=str2bool, nargs='?', const=True, default=False, 
                     help="overwrite existing files")
 args = parser.parse_args()
-
-def write_stats(ret, dir):
-    messages_total, conversations_total, new_ret=0,0, {}
-    for val in ret: 
-        messages_total+=val["messages"]
-        conversations_total+=val["conversations"]
-        try: new_ret[val["channel"]]={"messages": new_ret[val["channel"]]["messages"]+val["messages"], "conversations": new_ret[val["channel"]]["conversations"]+val["conversations"]}
-        except: new_ret[val["channel"]]={"messages": val["messages"], "conversations": val["conversations"]}
-    json.dump({"messages_total":messages_total,"conversations_total":conversations_total, "num_files":len(ret), "num_channels":len(new_ret), "individual":ret, "merged":new_ret}, open(os.path.join(dir,"stats.json"),"w"))
 
 def run_regex():
     #precompute tasks and create required dir

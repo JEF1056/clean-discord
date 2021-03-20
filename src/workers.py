@@ -6,6 +6,7 @@ import json
 import ijson
 import random
 import numpy as np
+from tqdm import tqdm
 from datetime import datetime
 from pyinstrument import Profiler
 
@@ -139,6 +140,8 @@ class worker_detox():
                         mp=[True if value < 0.8 and mp[index] == True else False for index, value in enumerate(res[cl])]
                     msg.extend(mp)    
                 msg="\n".join([f.strip("\t") for f in "\t".join(np.array(all_msgs)[msg]).split("\b")])
+                origin=len(all_msgs)
+                messages=len(np.array(all_msgs)[msg])
                 if fst: f.write(msg); fst=False
                 else: f.write("\n"+msg)
             

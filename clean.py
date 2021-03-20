@@ -62,7 +62,7 @@ def run_detox(to_clean):
     except: pass
     
     detox_worker=worker_detox("unbiased", args.device)
-    with concurrent.futures.ProcessPoolExecutor(max_workers=2) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
         ret=list(tqdm(executor.map(detox_worker.clean(), tasks, repeat(to_clean), repeat(to_clean+"-detox")), total=len(tasks), desc="Detoxifying..."))
     if ret != {}: write_stats(ret, to_clean)
     

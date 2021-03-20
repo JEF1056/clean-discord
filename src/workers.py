@@ -102,14 +102,14 @@ class worker_detox():
     def clean(self, filename, input_folder, output_folder, debug=False):
         if debug: profiler = Profiler(); profiler.start()
         file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
-        
+        c=0
         while True:
             #we're going to batch the data by char length so that they fit within the GPU memory
             batch=[]
             while len("\b".join(batch)) <= self.char_limit:
                 line = file_data.readline().strip()
                 if batch==[] and not line:
-                    #print(batches[2]) 
+                    print(c)
                     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True)); return count #if we finished processing everything and the final batch has been computed, return.
                 batch.append(line)
 
@@ -129,7 +129,7 @@ class worker_detox():
             del all_msgs
 
             #now we have proper batches yayyy, time to crush them in the AI
-            print("batch done")
+            c+=len(batches)
             print(self.model.predict(batches[0].replace("\b","").split("\t")))
             
 if __name__ == '__main__':

@@ -131,15 +131,19 @@ class worker_detox():
                 del batch
 
                 #now we have proper batches yayyy, time to crush them in the AI
+                msg=[]
                 for batch in batches:
                     res=self.model.predict(batch.replace("\b","").split("\t"))
                     mp=[True]*len(res["toxicity"])
                     del res["toxicity"]
                     for cl in res:
                         mp=[True if value > 0.8 and mp[index] == True else False for index, value in res[cl]]
-                    msg="\n".join([f.strip("\t") for f in "\t".join(np.array(batch)[mp]).split("\b")])
-                    if fst: f.write(msg); fst=False
-                    else: f.write("\n"+msg)
+                    msg.extend(np.array(batch)[mp])
+                    print(msg)
+                    return False
+                msg="\n".join([f.strip("\t") for f in "\t".join(msg).split("\b")])
+                if fst: f.write(msg); fst=False
+                else: f.write("\n"+msg)
             
 if __name__ == '__main__':
     import argparse

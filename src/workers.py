@@ -1,13 +1,11 @@
 import re
 import io
 import os
-import time
 import json
 import ijson
 import random
+import ciso8601
 import numpy as np
-from tqdm import tqdm
-from datetime import datetime
 from pyinstrument import Profiler
 from profanity_check import predict
 
@@ -82,7 +80,7 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
     messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
     with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-        msg, last_seen, last_author, curr_time=[],0,"",0
+        msg, last_seen, last_author, curr_time=[],None,"",0
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
                 content, author=clean(data["content"]),clean(data["author"]["name"], author=data["author"]["id"])
@@ -90,12 +88,12 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
                     if last_author != author or len(msg)==0:
                         msg.append(f'{author}: {content}')
                         count["messages"]+=1
-                        curr_time=time.mktime(datetime.strptime(data["timestamp"].split(".")[0].replace("+00:00", ""),"%Y-%m-%dT%H:%M:%S",).timetuple())
-                        if len(msg)==max_context or (curr_time - last_seen > 600 and last_seen != 0 and len(msg) > 1):
+                        curr_time=ciso8601.parse_datetime(data['timestamp'])
+                        if len(msg)==max_context or (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
                             msg="\t".join(msg)
                             if fst: f.write(msg); fst=False
                             else: f.write("\n"+msg)
-                            msg=[]; last_author=""; last_seen=0; count["conversations"]+=1
+                            msg=[]; last_author=""; last_seen=None; count["conversations"]+=1
                         last_author = author
                     else:
                         msg[len(msg)-1]+=f"\\n{content}"
@@ -146,14 +144,14 @@ if __name__ == '__main__':
         except: raise Exception("Unable to load steps json.")
     for step in steps:
         if step == "regex":
-            print("Running regex test")
-            print(worker(os.listdir(args.dir)[0], args.dir, args.out, debug=True))
+            print("\033[1mRunning regex test\033[0m")
+            ret=[worker(os.listdir(args.dir)[0], args.dir, args.out, debug=True)]
             write_stats(ret, args.out)
         elif step == "pairs":
-            print("Pairs test not implemented")
+            print("\033[1mPairs test not implemented\033[0m")
             pass #not implemented
         elif step == "detox":
-            print(f"Running detox test")
+            print(f"\033[1mRunning detox test\033[0m")
             ret=[worker_detox([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True)]
             write_stats(ret, args.out+"-detox")
     print("DONE")

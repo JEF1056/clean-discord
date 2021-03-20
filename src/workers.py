@@ -115,7 +115,7 @@ class worker_detox():
                     batch.append(line)
 
                 all_msgs="\b\t".join(batch).split("\t") #"\b" will be appended to the end of every conversation end so that we can split it out later
-                
+
                 #we need to handle situations where the line was already longer than the expected char length.
                 if len("\t".join(all_msgs)) > self.char_limit:
                     batches, curr_batch=[],""
@@ -132,13 +132,12 @@ class worker_detox():
                 #now we have proper batches yayyy, time to crush them in the AI
                 msg=[]
                 for batch in batches:
-                    res=self.model.predict(batch.replace("\b","").split("\t"))
-                    print(res["toxicity"])
+                    res=self.model.predict(list(filter(None,batch.replace("\b","").split("\t"))))
                     mp=[True]*len(res["toxicity"])
                     del res["toxicity"]
                     for cl in res:
                         mp=[True if value < 0.8 and mp[index] == True else False for index, value in enumerate(res[cl])]
-                    msg.extend(mp)
+                    msg.extend(mp)    
                 msg="\n".join([f.strip("\t") for f in "\t".join(np.array(all_msgs)[msg]).split("\b")])
                 if fst: f.write(msg); fst=False
                 else: f.write("\n"+msg)

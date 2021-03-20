@@ -5,10 +5,11 @@ import time
 import json
 import ijson
 import random
+import numpy as np
 from tqdm import tqdm
 from datetime import datetime
 from pyinstrument import Profiler
-from profanityfilter import ProfanityFilter
+from profanity_check import predict
 
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
     'Å':'A', 'Æ':'A', 'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E', 'Ì':'I', 'Í':'I', 'Î':'I',
@@ -107,84 +108,24 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
     return count
 
-class worker_detox():
-    def __init__(self):
-        self.pf=ProfanityFilter()
-    
-    def clean(self, filename, input_folder, output_folder, debug=False):
-        if debug: profiler = Profiler(); profiler.start()
-        file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
-        ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-        with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-            while True:
-                line = file_data.readline().strip()
-                if not line:
-                    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
-                    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-                    return count
-                count["conversations"]+=1
-                outline=[]
-                for msg in tqdm(line.split("\t")):
-                    if self.pf.is_clean(msg):
-                        outline.append(msg)
-                        count["messages"]+=1
-                    else:
-                        count["removed_messages"]+=1
-                if fst: f.write("\t".join(outline)); fst=False
-                else: f.write("\n"+"\t".join(outline))
-                #if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True)); return count
-
-"""
-class worker_detox():
-    def __init__(self, model, device="cuda", char_limit=5000):
-        from detoxify import Detoxify
-        self.model=Detoxify(model, device=device)
-        self.char_limit=char_limit
-    
-    def clean(self, filename, input_folder, output_folder, debug=False):
-        if debug: profiler = Profiler(); profiler.start()
-        file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
-        ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-        with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-            while True:
-                #we're going to batch the data by char length so that they fit within the GPU memory
-                batch=[]
-                while len("\b".join(batch)) <= self.char_limit:
-                    line = file_data.readline().strip()
-                    if batch==[] and not line:
-                        if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True)); return count #if we finished processing everything and the final batch has been computed, return.
-                    batch.append(line)
-
-                all_msgs="\b\t".join(batch).split("\t") #"\b" will be appended to the end of every conversation end so that we can split it out later
-
-                #we need to handle situations where the line was already longer than the expected char length.
-                if len("\t".join(all_msgs)) > self.char_limit:
-                    batches, curr_batch=[],""
-                    for i,val in enumerate(all_msgs):
-                        if len(curr_batch) >= self.char_limit:
-                            batches.append(curr_batch.strip("\t"))
-                            curr_batch=""
-                        curr_batch+="\t"+val
-                        if i==len(all_msgs)-1: batches.append(curr_batch)
-                else:
-                    batches=[all_msgs]
-                del batch
-
-                #now we have proper batches yayyy, time to crush them in the AI
-                msg=[]
-                for batch in batches:
-                    res=self.model.predict(list(filter(None,batch.replace("\b","").split("\t"))))
-                    mp=[True]*len(res["toxicity"])
-                    del res["toxicity"]
-                    for cl in res:
-                        mp=[True if value < 0.8 and mp[index] == True else False for index, value in enumerate(res[cl])]
-                    msg.extend(mp)    
-                msg="\n".join([f.strip("\t") for f in "\t".join(np.array(all_msgs)[msg]).split("\b")])
-                origin=len(all_msgs)
-                messages=len(np.array(all_msgs)[msg])
-                if fst: f.write(msg); fst=False
-                else: f.write("\n"+msg)
-"""
+def worker_detox(filename, input_folder, output_folder, debug=False):
+    if debug: profiler = Profiler(); profiler.start()
+    file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
+    ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
+    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
+        while True:
+            line = file_data.readline().strip()
+            if not line:
+                os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+                if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
+                return count
+            count["conversations"]+=1
+            line=np.array(line.split("\t"))
+            pred_map=predict(line)
+            count["removed_messages"], count["messages"] = np.count_nonzero(pred_map == 1), np.count_nonzero(pred_map == 0)
+            pred_map=pred_map < 1
+            if fst: f.write("\t".join(line[pred_map])); fst=False
+            else: f.write("\n"+"\t".join(line[pred_map]))
             
 if __name__ == '__main__':
     import argparse
@@ -195,10 +136,6 @@ if __name__ == '__main__':
                         help='the folder to output txts')
     parser.add_argument('-step', type=str, default="all",
                         help='the step to start cleaning from')
-    #parser.add_argument("-device", type=str, default="cpu", choices=["cpu", "cuda"],
-    #                    help="device detoxify should use")
-    #parser.add_argument("-char_limit", type=int, default=30000,
-    #                    help="device detoxify should use")
     args = parser.parse_args()
     if args.step == "all":
         steps=["regex", "pairs", "detox"]
@@ -211,12 +148,12 @@ if __name__ == '__main__':
         if step == "regex":
             print("Running regex test")
             print(worker(os.listdir(args.dir)[0], args.dir, args.out, debug=True))
+            write_stats(ret, args.out)
         elif step == "pairs":
             print("Pairs test not implemented")
             pass #not implemented
         elif step == "detox":
             print(f"Running detox test")
-            detox_worker=worker_detox()
-            ret=[detox_worker.clean([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True)]
+            ret=[worker_detox([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True)]
             write_stats(ret, args.out+"-detox")
     print("DONE")

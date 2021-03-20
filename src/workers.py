@@ -127,7 +127,6 @@ class worker_detox():
                         if i==len(all_msgs)-1: batches.append(curr_batch)
                 else:
                     batches=[all_msgs]
-                del all_msgs
                 del batch
 
                 #now we have proper batches yayyy, time to crush them in the AI
@@ -138,13 +137,9 @@ class worker_detox():
                     mp=[True]*len(res["toxicity"])
                     del res["toxicity"]
                     for cl in res:
-                        mp1=[True if value > 0.8 and mp[index] == True else False for index, value in enumerate(res[cl])]
-                        mp=mp1
-                    print(mp)
-                    msg.extend(np.array(batch)[mp])
-                    print(msg)
-                    return False
-                msg="\n".join([f.strip("\t") for f in "\t".join(msg).split("\b")])
+                        mp=[True if value < 0.8 and mp[index] == True else False for index, value in enumerate(res[cl])]
+                    msg.extend(mp)
+                msg="\n".join([f.strip("\t") for f in "\t".join(np.array(all_msgs)[msg]).split("\b")])
                 if fst: f.write(msg); fst=False
                 else: f.write("\n"+msg)
             

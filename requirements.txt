@@ -1,4 +1,4 @@
 tqdm
 pyinstrument
 ijson
-profanityfilter
+https://github.com/aarashy/profanityfilter/archive/refs/heads/patch-2.zip

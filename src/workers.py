@@ -35,7 +35,7 @@ def gen_name(username):
             out_name=random.choice(names)
             replace_names[username]=out_name
         return out_name
-    except: return "@"+random.choice(names)
+    except: return " @"+random.choice(names)
     
 def write_stats(ret, dir):
     messages_total, conversations_total, removed_total, new_ret=0,0,0, {}
@@ -48,25 +48,26 @@ def write_stats(ret, dir):
     json.dump({"messages_total":messages_total,"conversations_total":conversations_total, "removed_total":removed_total, "num_files":len(ret), "num_channels":len(new_ret), "individual":ret, "merged":new_ret}, open(os.path.join(dir,"stats.json"),"w"))
     
 #precompile regex
-r1=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|<:.+?:\d+>|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```(?:.?)+```|:[^:\s]*(?:::[^:\s]*)*:|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/'+"".join(emojis)+r']+', flags=re.DOTALL | re.IGNORECASE)
-r2=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]{2,}')
-r3=re.compile(r"([\.\'\"@?!a-z])\1{3,}|([\s!?@\"\'])\2+|\s([?.!\"](?:\s|$))", re.IGNORECASE)
-r4=re.compile(r'@Deleted User')
+r1=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t ]{2,}')
+r2=re.compile(r'@Deleted User')
+#|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/'+''.join(emojis)+r']+|
+r3=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:.+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/'+''.join(emojis)+r']+|([a-z])\s([.,\'@!?\/])', flags=re.DOTALL | re.IGNORECASE)
+r4=re.compile(r"([a-z.])\1{3,}|([,\'@!?\s\/])\2+", re.IGNORECASE)
 r5=re.compile(r'['+"".join(emojis)+r']')
 
 def clean(text, author=None):
     if text.lower().startswith(bot_prefixes): return None #handle bot commands
-    if author != None and text == "Deleted User": return gen_name(author)
+    if author != None and text == "Deleted User": return gen_name(author).strip()
         
     unique=[i for i in list(set(text)) if i not in alphabets[0]] #handle special chars from other langs
     for char in unique: 
         try: text=text.replace(char, normalize_chars[char])
         except:pass
-    if author == None: text= re.sub(r4, gen_name, text) #replace "deleted users" with names
-    text= re.sub(r1, "", text.strip()) #remove urls, emails, code blocks, custom emojis, spaces between punctuation, non-emoji, punctuation, letters, and phone numbers
-    text= re.sub(r2, " ", text) #handle... interesting spaces
-    text= re.sub(r3, r"\1\1\1\2\3", text) #handle excessive repeats of punctuation, limited to 3, repeated words, excessive spaces or excessive punctuation, spaces before punctuation but after text
-    text= text.strip().replace("\n","\\n").strip("\\n").strip("\t") #handle newlines
+    text= re.sub(r1, " ", text) #handle... interesting spaces
+    if author == None: text= re.sub(r2, gen_name, text) #replace "deleted users" with names
+    text= re.sub(r3, r"\2\3", text.strip()) #remove urls, emails, code blocks, custom emojis, spaces between punctuation, non-emoji, punctuation, letters, and phone numbers
+    text= re.sub(r4, r"\1\1\1\2", text) #handle excessive repeats of punctuation, limited to 3, repeated words, excessive spaces or excessive punctuation, spaces before punctuation but after text
+    text= text.strip().replace("\n ","\\n").strip("\\n").strip("\t") #handle newlines
     
     if text != "\\n" and text != " " and text != "" and author==None:
         return text
@@ -135,6 +136,37 @@ if __name__ == '__main__':
     parser.add_argument('-step', type=str, default="all",
                         help='the step to start cleaning from')
     args = parser.parse_args()
+    
+    worstcase_clean="""
+Hi, this is a test.
+```
+This is some code:
+if args.step == "all":
+    steps=["regex", "pairs", "detox"]
+else:
+    try:
+        steps=json.loads(args.step)
+        assert type(steps)==list
+    except: raise Exception("Unable to load steps json.")
+```
+`this too, but it's only one line`
+heh maybe if i put it on one line ```e``` or does `this` work
+REEE WHY IS IS BEING CLEANED OOOOF HOWWWWWWWW
+I AM THE KING ♕ ✦ —• YOU CANNOT STOP ME
+what about this 𝐈𝐌𝐀𝐆𝐄, it should be IMAGE.
+hahahahaha i bet you can't beat my cool asian language 毛泽东万岁
+WHAAAAAAAAAAAAAAAAAAAAAAT noooooooooooooooooooooooo it can't be..................
+hahaha but my best invention yet, my friend @Deleted User and @Deleted User. They will surely defeat you.
+                     plenty              of                      spaces               ???????????????       🥲
+fine. one last resort. my email is contact@j-fan.ml and you can join my server at https://jadeai.ml/server. Join or else.
+if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 will work
+    """
+    
+    print("Running a clean test case ~~~~~~~~")
+    print(f"{worstcase_clean}\nRaw ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+    print(clean(worstcase_clean).replace("\\n","\n"))
+    print("Clean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+    
     if args.step == "all":
         steps=["regex", "pairs", "detox"]
     else:

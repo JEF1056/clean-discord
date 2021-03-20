@@ -5,6 +5,7 @@ import time
 import json
 import ijson
 import random
+import numpy as np
 from datetime import datetime
 from pyinstrument import Profiler
 
@@ -102,35 +103,43 @@ class worker_detox():
     def clean(self, filename, input_folder, output_folder, debug=False):
         if debug: profiler = Profiler(); profiler.start()
         file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
-        c=0
-        while True:
-            #we're going to batch the data by char length so that they fit within the GPU memory
-            batch=[]
-            while len("\b".join(batch)) <= self.char_limit:
-                line = file_data.readline().strip()
-                if batch==[] and not line:
-                    print(c)
-                    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True)); return count #if we finished processing everything and the final batch has been computed, return.
-                batch.append(line)
+        ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
+        with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
+            while True:
+                #we're going to batch the data by char length so that they fit within the GPU memory
+                batch=[]
+                while len("\b".join(batch)) <= self.char_limit:
+                    line = file_data.readline().strip()
+                    if batch==[] and not line:
+                        if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True)); return count #if we finished processing everything and the final batch has been computed, return.
+                    batch.append(line)
 
-            all_msgs="\b\t".join(batch).split("\t") #"\b" will be appended to the end of every conversation end so that we can split it out later
-            
-            #we need to handle situations where the line was already longer than the expected char length.
-            if len("\t".join(all_msgs)) > self.char_limit:
-                batches, curr_batch=[],""
-                for i,val in enumerate(all_msgs):
-                    if len(curr_batch) >= self.char_limit:
-                        batches.append(curr_batch.strip("\t"))
-                        curr_batch=""
-                    curr_batch+="\t"+val
-                    if i==len(all_msgs)-1: batches.append(curr_batch)
-            else:
-                batches=[all_msgs]
-            del all_msgs
+                all_msgs="\b\t".join(batch).split("\t") #"\b" will be appended to the end of every conversation end so that we can split it out later
+                
+                #we need to handle situations where the line was already longer than the expected char length.
+                if len("\t".join(all_msgs)) > self.char_limit:
+                    batches, curr_batch=[],""
+                    for i,val in enumerate(all_msgs):
+                        if len(curr_batch) >= self.char_limit:
+                            batches.append(curr_batch.strip("\t"))
+                            curr_batch=""
+                        curr_batch+="\t"+val
+                        if i==len(all_msgs)-1: batches.append(curr_batch)
+                else:
+                    batches=[all_msgs]
+                del all_msgs
+                del batch
 
-            #now we have proper batches yayyy, time to crush them in the AI
-            c+=len(batches)
-            print(self.model.predict(batches[0].replace("\b","").split("\t")))
+                #now we have proper batches yayyy, time to crush them in the AI
+                for batch in batches:
+                    res=self.model.predict(batch.replace("\b","").split("\t"))
+                    mp=[True]*len(res["toxicity"])
+                    del res["toxicity"]
+                    for cl in res:
+                        mp=[True if value > 0.8 and mp[index] == True else False for index, value in res[cl]]
+                    msg="\n".join([f.strip("\t") for f in "\t".join(np.array(batch)[mp]).split("\b")])
+                    if fst: f.write(msg); fst=False
+                    else: f.write("\n"+msg)
             
 if __name__ == '__main__':
     import argparse

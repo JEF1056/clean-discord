@@ -1,9 +1,10 @@
 import re
 import io
 import os
+import time
+import json
 import ijson
 import random
-import time
 from datetime import datetime
 from pyinstrument import Profiler
 
@@ -63,7 +64,7 @@ def clean(text, author=None):
 
 def worker(filename, input_folder, output_folder, max_context=1000, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0}
+    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
     with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
         msg, last_seen, last_author, curr_time=[],0,"",0
@@ -83,23 +84,53 @@ def worker(filename, input_folder, output_folder, max_context=1000, debug=False)
                         last_author = author
                     else:
                         msg[len(msg)-1]+=f"\\n{content}"
+                else:
+                    count["removed_messages"]+=1
+            else:
+                count["removed_messages"]+=1
             last_seen = curr_time
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
     return count
 
 class worker_detox():
-    def __init__(self, model, device="cuda", debug=False):
+    def __init__(self, model, device="cuda", char_limit=5000):
         from detoxify import Detoxify
         self.model=Detoxify(model, device=device)
-        self.debug=debug
+        self.char_limit=char_limit
     
-    def clean(self):
-        if self.debug: profiler = Profiler(); profiler.start()
+    def clean(self, filename, input_folder, output_folder, debug=False):
+        if debug: profiler = Profiler(); profiler.start()
+        file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
         
-    
-    
+        while True:
+            #we're going to batch the data by char length so that they fit within the GPU memory
+            batch=[]
+            while len("\b".join(batch)) <= self.char_limit:
+                line = file_data.readline().strip()
+                if batch==[] and not line:
+                    #print(batches[2]) 
+                    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True)); return count #if we finished processing everything and the final batch has been computed, return.
+                batch.append(line)
 
+            all_msgs="\b\t".join(batch).split("\t") #"\b" will be appended to the end of every conversation end so that we can split it out later
+            
+            #we need to handle situations where the line was already longer than the expected char length.
+            if len("\t".join(all_msgs)) > self.char_limit:
+                batches, curr_batch=[],""
+                for i,val in enumerate(all_msgs):
+                    if len(curr_batch) >= self.char_limit:
+                        batches.append(curr_batch.strip("\t"))
+                        curr_batch=""
+                    curr_batch+="\t"+val
+                    if i==len(all_msgs)-1: batches.append(curr_batch)
+            else:
+                batches=[all_msgs]
+            del all_msgs
+
+            #now we have proper batches yayyy, time to crush them in the AI
+            print(self.model.predict(batches[0].replace("\b","").split("\t")))
+            
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Clean Discord data')
@@ -107,5 +138,29 @@ if __name__ == '__main__':
                         help='the fonlder that contains the data file')
     parser.add_argument('-out', type=str, default="output",
                         help='the folder to output txts')
+    parser.add_argument('-step', type=str, default="all",
+                        help='the step to start cleaning from')
+    parser.add_argument("-device", type=str, default="cpu", choices=["cpu", "cuda"],
+                        help="device detoxify should use")
+    parser.add_argument("-char_limit", type=int, default=30000,
+                        help="device detoxify should use")
     args = parser.parse_args()
-    print(worker(os.listdir(args.dir)[0], args.dir, args.out, debug=True))
+    if args.step == "all":
+        steps=["regex", "pairs", "detox"]
+    else:
+        try:
+            steps=json.loads(args.step)
+            assert type(steps)==list
+        except: raise Exception("Unable to load steps json.")
+    for step in steps:
+        if step == "regex":
+            print("Running regex test")
+            print(worker(os.listdir(args.dir)[0], args.dir, args.out, debug=True))
+        elif step == "pairs":
+            print("Pairs test not implemented")
+            pass #not implemented
+        elif step == "detox":
+            print(f"Running debug test on {args.device}")
+            detox_worker=worker_detox("unbiased-small", args.device, char_limit=args.char_limit)
+            print(detox_worker.clean([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True))
+    print("DONE")

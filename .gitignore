@@ -8,7 +8,7 @@ introduce-dataset
 commonq
 *.temp
 *.txt
-*.json
+stats*.json
 sampledat
 
 # Created by https://www.toptal.com/developers/gitignore/api/jetbrains+all,python,vscode

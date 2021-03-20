@@ -134,10 +134,13 @@ class worker_detox():
                 msg=[]
                 for batch in batches:
                     res=self.model.predict(batch.replace("\b","").split("\t"))
+                    print(res["toxicity"])
                     mp=[True]*len(res["toxicity"])
                     del res["toxicity"]
                     for cl in res:
-                        mp=[True if value > 0.8 and mp[index] == True else False for index, value in res[cl]]
+                        mp1=[True if value > 0.8 and mp[index] == True else False for index, value in enumerate(res[cl])]
+                        mp=mp1
+                    print(mp)
                     msg.extend(np.array(batch)[mp])
                     print(msg)
                     return False

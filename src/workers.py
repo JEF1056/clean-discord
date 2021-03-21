@@ -70,7 +70,7 @@ def clean(text, author=None):
     text=text.translate(normal_map)#handle special chars from other langs
     text= re.sub(r1, " ", text) #handle... interesting spaces
     if author == None: text= re.sub(r2, gen_name, text) #replace "deleted users" with names
-    text= re.sub(r3, r"\2\3", text.strip()) #remove urls, emails, code blocks, custom emojis, spaces between punctuation, non-emoji, punctuation, letters, and phone numbers
+    text= re.sub(r3, r"\2\3", text.strip()) #remove urls, emails, code blocks, custom emojis, non-emoji, punctuation, letters, and phone numbers
     text= re.sub(r4, r"\1\1\1\2", text) #handle excessive repeats of punctuation, limited to 3, repeated words, excessive spaces or excessive punctuation, spaces before punctuation but after text
     text= "".join(list(map(convemojis,text))) #translate emojis to their `:text:` shorthand form
     text= text.replace("\n","\\n").strip().strip("\\n").strip("\t") #handle newlines

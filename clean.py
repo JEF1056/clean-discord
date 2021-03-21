@@ -56,7 +56,7 @@ def run_detox(to_clean):
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
         ret=list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean), repeat(to_clean+"-detox")), total=len(tasks), desc="Detoxifying..."))
-    if ret != []: write_stats(ret, to_clean)
+    if ret != []: write_stats(ret, to_clean+"-detox")
         
 if __name__ == '__main__':
     check_files(args.dir)

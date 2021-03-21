@@ -53,7 +53,7 @@ python3 clean.py -detox -workers 8 -dir ../data -out ../cleaned
 ## How is it done?
 The process of cleaning the data includes removing a lot of the issues that can be found in discord chat logs, including:
 > Please add a pull request or an issue if you can think of any other cases this script should cover!
-- Translating "special" unicode-based characters into the english alphabet (text like `T҉o҉X҉i҉C҉` to `ToXiC`)
+- Translating "special" unicode-based characters into the english alphabet (text like `𝔾𝕣𝕒𝕟𝕕𝕞𝕒'𝕤 🅂🄲🄰🅁🅈 ɖօɢ` to `Grandma's SCARY DOG` (a real username btw))
 - Converting excessive spaces and unicode spaces to traditional spaces (text like `hi  		, you!` to `hi, you`)
 - Replace users who left the the server(s) without being properly cached (they show up as `Deleted User`) with a random [name](./src/names.txt) that is attached to their id (names like `@Deleted User` to `@Jake`)
 - Fixing excessive punctuation or spelling with certain limits (to keep ellipsis, for example) (text like `REEEEEEEEEEEEEEE..........` to `REEE...`)

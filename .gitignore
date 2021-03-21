@@ -1,15 +1,14 @@
-data-1
 test.py
 tt.py
 context*
 *.pyc
-introduce-dataset
 *.tar.gz
-commonq
 *.temp
 *.txt
-stats*.json
-sampledat
+*.json
+!stats*.json
+!Test*.json
+output*
 
 # Created by https://www.toptal.com/developers/gitignore/api/jetbrains+all,python,vscode
 # Edit at https://www.toptal.com/developers/gitignore?templates=jetbrains+all,python,vscode
@@ -251,6 +250,4 @@ dmypy.json
 !.vscode/extensions.json
 *.code-workspace
 
-data
 # End of https://www.toptal.com/developers/gitignore/api/jetbrains+all,python,vscode
-src/workers.py

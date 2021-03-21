@@ -127,7 +127,7 @@ def worker_detox(filename, input_folder, output_folder, debug=False):
             count["conversations"]+=1
             line=np.array(line.split("\t"))
             pred_map=predict(line)
-            count["removed_messages"], count["messages"] = np.count_nonzero(pred_map == 1), np.count_nonzero(pred_map == 0)
+            count["removed_messages"], count["messages"] += np.count_nonzero(pred_map == 1), np.count_nonzero(pred_map == 0)
             line=line[pred_map < 1]
             if len(line) > 1:
                 if fst: f.write("\t".join(line)); fst=False

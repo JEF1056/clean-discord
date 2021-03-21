@@ -23,6 +23,11 @@ for alphabet in alphabets[1:]:
     for ind, char in enumerate(alphabet):
         try:normalize_chars[char]=alphabets[0][ind]
         except: print(alphabet, len(alphabet), len(alphabets[0]));break
+normalize_chars.update({i:i for i in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'})
+
+normal_map=str.maketrans(normalize_chars)
+del normalize_chars
+
 bot_prefixes=tuple(io.open("src/prefixes.txt", mode="r", encoding="utf-8").read().strip().split("\n"))
 names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 replace_names={}
@@ -50,25 +55,26 @@ def write_stats(ret, dir):
 #precompile regex
 r1=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t ]{2,}')
 r2=re.compile(r'@Deleted User')
-#|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/'+''.join(emojis)+r']+|
 r3=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:.+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/'+''.join(emojis)+r']+|([a-z])\s([.,\'@!?\/])', flags=re.DOTALL | re.IGNORECASE)
 r4=re.compile(r"([a-z.])\1{3,}|([,\'@!?\s\/])\2+", re.IGNORECASE)
 r5=re.compile(r'['+"".join(emojis)+r']')
 
+def convemojis(i):
+    if i in emojis: return emojis[i]
+    return i
+
 def clean(text, author=None):
     if text.lower().startswith(bot_prefixes): return None #handle bot commands
     if author != None and text == "Deleted User": return gen_name(author).strip()
-        
-    unique=[i for i in list(set(text)) if i not in alphabets[0]] #handle special chars from other langs
-    for char in unique: 
-        try: text=text.replace(char, normalize_chars[char])
-        except:pass
+    
+    text=text.translate(normal_map)#handle special chars from other langs
     text= re.sub(r1, " ", text) #handle... interesting spaces
     if author == None: text= re.sub(r2, gen_name, text) #replace "deleted users" with names
     text= re.sub(r3, r"\2\3", text.strip()) #remove urls, emails, code blocks, custom emojis, spaces between punctuation, non-emoji, punctuation, letters, and phone numbers
     text= re.sub(r4, r"\1\1\1\2", text) #handle excessive repeats of punctuation, limited to 3, repeated words, excessive spaces or excessive punctuation, spaces before punctuation but after text
-    text= text.strip().replace("\n ","\\n").strip("\\n").strip("\t") #handle newlines
-    
+    text= "".join(list(map(convemojis,text))) #translate emojis to their `:text:` shorthand form
+    text= text.replace("\n","\\n").strip().strip("\\n").strip("\t") #handle newlines
+         
     if text != "\\n" and text != " " and text != "" and author==None:
         return text
     elif text != "\\n" and text != " " and text != "" and author!=None:
@@ -76,7 +82,7 @@ def clean(text, author=None):
     else:
         return None
 
-def worker(filename, input_folder, output_folder, max_context=1000, debug=False):
+def worker_regex(filename, input_folder, output_folder, max_context=1000, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
@@ -177,7 +183,7 @@ if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 w
     for step in steps:
         if step == "regex":
             print("\033[1mRunning regex test\033[0m")
-            ret=[worker(os.listdir(args.dir)[0], args.dir, args.out, debug=True)]
+            ret=[worker_regex(os.listdir(args.dir)[0], args.dir, args.out, debug=True)]
             write_stats(ret, args.out)
         elif step == "pairs":
             print("\033[1mPairs test not implemented\033[0m")

@@ -6,7 +6,7 @@ from tqdm import tqdm
 import concurrent.futures
 from itertools import repeat
 from src.validate import check_files
-from src.workers import worker, worker_detox, write_stats
+from src.workers import worker_regex, worker_detox, write_stats
 
 def str2bool(v):
     if isinstance(v, bool): return v
@@ -42,7 +42,7 @@ def run_regex():
     else: tasks=[m for m in os.listdir(args.dir) if re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", m).group(0)+".txt" not in os.listdir(args.out)]; print(f"Found {len(os.listdir(args.dir))-len(tasks)} files in {args.out}, skipping." if len(os.listdir(args.dir))-len(tasks) != 0 else f"Writing data to {args.out}")
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker, tasks, repeat(args.dir), repeat(args.out)), total=len(tasks), desc="Regex cleaning..."))
+        ret=list(tqdm(executor.map(worker_regex, tasks, repeat(args.dir), repeat(args.out)), total=len(tasks), desc="Regex cleaning..."))
     if ret != []: write_stats(ret, args.out)
         
 def run_detox(to_clean):

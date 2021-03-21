@@ -91,7 +91,7 @@ def worker_regex(filename, input_folder, output_folder, max_context=1000, debug=
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
                 content, author=clean(data["content"]),clean(data["author"]["name"], author=data["author"]["id"])
-                if content != None:
+                if content and author:
                     if last_author != author or len(msg)==0:
                         msg.append(f'{author}: {content}')
                         count["messages"]+=1
@@ -128,9 +128,10 @@ def worker_detox(filename, input_folder, output_folder, debug=False):
             line=np.array(line.split("\t"))
             pred_map=predict(line)
             count["removed_messages"], count["messages"] = np.count_nonzero(pred_map == 1), np.count_nonzero(pred_map == 0)
-            pred_map=pred_map < 1
-            if fst: f.write("\t".join(line[pred_map])); fst=False
-            else: f.write("\n"+"\t".join(line[pred_map]))
+            line=line[pred_map < 1]
+            if len(line) > 1:
+                if fst: f.write("\t".join(line)); fst=False
+                else: f.write("\n"+"\t".join(line))
             
 if __name__ == '__main__':
     import argparse

@@ -59,9 +59,9 @@ The process of cleaning the data includes removing a lot of the issues that can 
 - Fixing excessive punctuation or spelling with certain limits (to keep ellipsis, for example) (text like `REEEEEEEEEEEEEEE..........` to `REEE...`)
 - Filtering non-ascii characters and commonly used characters for ascii/unicode art (but keeping enough to make the vast majority of messages look ok) (text like `🖊️i like to write <🖊️>` to `i like to write`)
 - Converting [supported emojis](./src/emojis.json) to their shorthand form (`😂` to `:joy:`,)
-- Removing multiline code blocks while only removing the ticks around the single line code blocks (removing text like <code>```text```</code>)
+- Removing multiline code blocks while only removing the ticks around the single line code blocks (removing text like <code>\```text```</code>)
 - Replacing newlines with an escaped newline (`hi\nhow are you?` to `hi\\nhow are you?`)
-- Merging multi-message, single-author continutous messages into a single message merged with escaped newlines
+- Merging multi-message, single-author continuous messages into a single message merged with escaped newlines
 - Removing URLs (like `https://jadeai.ml`)
 - Removing emails (like `contact@j-fan.ml`)
 - Removing phone numbers (like `+1 (123) 456-7890`)

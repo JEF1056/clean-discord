@@ -41,9 +41,6 @@ def listener(q, split):
     with gzip.open(f"{args.out}-{split}.txt.gz", "wb", compresslevel=args.compression_level) as f:
         while 1:
             m = q.get()
-            if m == 'kill':
-                f.write('killed')
-                break
             for line in m:
                 if fst: f.write(line, args.compression_level); fst=False
                 else: f.write("\n"+line, args.compression_level)
@@ -68,8 +65,6 @@ def main(files, split):
         job.get()
 
     #now we are done, kill the listener
-    q.put('kill')
-    time.sleep(0.01)
     pool.close()
     pool.join()
 

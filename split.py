@@ -37,7 +37,7 @@ def worker(filename, q):
 
 def listener(q, split):
     fst=True
-    with io.open(f"{args.out}-{split}.txt", mode='wb', encoding="utf-8") as f:
+    with open(f"{args.out}-{split}.zlib", mode='wb') as f:
         while 1:
             m = q.get()
             for line in m:
@@ -45,10 +45,8 @@ def listener(q, split):
                 else: f.write(zlib.compress("\n"+line, args.compression_level))
                 f.flush()
 
-def main(files, split):
+def main(files, split, q):
     #must use Manager queue here, or will not work
-    manager = mp.Manager()
-    q = manager.Queue()    
     pool = mp.Pool(args.workers)
 
     #put listener to work first
@@ -74,5 +72,9 @@ if __name__ == '__main__':
     files.remove('stats.json')
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
-    main(train_files, "train")
-    #main(eval_files, "val")
+    manager = mp.Manager()   
+    
+    q = manager.Queue() 
+    main(train_files, "train", q)
+    q = manager.Queue() 
+    main(eval_files, "val", q)

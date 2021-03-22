@@ -1,6 +1,6 @@
 import os
 import io
-import zlib
+import gzip
 import argparse
 from tqdm import tqdm
 import multiprocessing as mp
@@ -12,7 +12,7 @@ parser.add_argument('-out', type=str, default="context",
                     help='prefix the compressed output file sets')
 parser.add_argument('-workers', type=int, default=None,
                     help='the folder to output txts')
-parser.add_argument('-compression_level', type=int, default=9, choices=list(range(-1,9)),
+parser.add_argument('-compression_level', type=int, default=9, choices=list(range(-1,10)),
                     help='how compressed the file should be')
 args = parser.parse_args()
 
@@ -37,15 +37,15 @@ def worker(filename, q):
 
 def listener(q, split):
     fst=True
-    with io.open(args.out+split+".txt", mode='w', encoding="utf-8") as f:
+    with gzip.open(f"{args.out}-{split}.txt.gz", "wb") as f:
         while 1:
             m = q.get()
             if m == 'kill':
                 f.write('killed')
                 break
             for line in m:
-                if fst: f.write(zlib.compress(line, args.compression_level)); fst=False
-                else: f.write(zlib.compress("\n"+line, args.compression_level))
+                if fst: f.write(line, args.compression_level); fst=False
+                else: f.write("\n"+line, args.compression_level)
                 f.flush()
 
 def main(files, split):

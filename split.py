@@ -28,11 +28,14 @@ def convertline(text, max_length=20):
     return [f"{inputs[i]}\t{targets[i]}" for i in range(len(inputs))] #zip them together in a dict of inputs and targets
 
 def worker(filename, q):
-    with io.open(os.path.join(args.dir, filename), mode="r", encoding="utf-8") as f:
-        line = f.readline()
-        while line:
-            q.put(convertline(line.strip()))
-            line=f.readline()
+    try:
+        with io.open(os.path.join(args.dir, filename), mode="r", encoding="utf-8") as f:
+            line = f.readline()
+            while line:
+                q.put(convertline(line.strip()))
+                line=f.readline()
+    except:
+        print(filename)
     return "DONE"
 
 def listener(q, split):
@@ -68,8 +71,8 @@ def main(files, split):
 
     #now we are done, kill the listener
     q.put('kill')
-    #pool.close()
-    #pool.join()
+    pool.close()
+    pool.join()
 
 if __name__ == '__main__':
     files=os.listdir(args.dir)

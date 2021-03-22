@@ -37,7 +37,7 @@ def worker(filename, q):
 
 def listener(q, split):
     fst=True
-    with gzip.open(f"{args.out}-{split}.txt.gz", "wb") as f:
+    with gzip.open(f"{args.out}-{split}.txt.gz", "wb", compresslevel=args.compression_level) as f:
         while 1:
             m = q.get()
             if m == 'kill':
@@ -46,8 +46,6 @@ def listener(q, split):
             for line in m:
                 if fst: f.write(line, args.compression_level); fst=False
                 else: f.write("\n"+line, args.compression_level)
-                f.flush()
-
 def main(files, split):
     #must use Manager queue here, or will not work
     manager = mp.Manager()

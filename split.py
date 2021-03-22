@@ -6,7 +6,7 @@ import argparse
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description='Split dataset in multiple files into train and validation sets')
-parser.add_argument('-dir', type=str, default="data",
+parser.add_argument('-dir', nargs="+", default=["data"],
                     help='the data folder containing the processed files on the top level')
 parser.add_argument('-out', type=str, default="context",
                     help='prefix the compressed output file sets')
@@ -27,11 +27,14 @@ def worker(files, split, w, max_length=10):
     return "DONE"
 
 if __name__ == '__main__':
-    files=os.listdir(args.dir)
+    files=[]
+    for dir in args.dir:
+        files.extend(os.listdir(dir))
     random.shuffle(files)
     files.remove('stats.json')
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
+    print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} filesss")
     
     with gzip.open(f"{args.out}-train.txt.gz", "wb") as w:
         worker(train_files, "train", w)

@@ -1,6 +1,6 @@
 import os
 import io
-import zlib
+import gzip
 import argparse
 from tqdm import tqdm
 
@@ -21,7 +21,7 @@ def worker(files, split, w, max_length=10):
                 line=line.split()
                 for y in range(1,len(line)):
                     x=y-max_length if y-max_length >= 0 else 0
-                    w.write(zlib.compress(f"{'/b'.join(line[x:y])}\t{line[y]}".encode()))
+                    w.write(f"{'/b'.join(line[x:y])}\t{line[y]}\n")
                 line=f.readline()
     return "DONE"
 
@@ -32,6 +32,6 @@ if __name__ == '__main__':
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
     
-    with open(f"{args.out}-train.txt", "wb") as w:
+    with gzip.open("compressed.txt.gz", "wb") as w:
         worker(train_files, "train", w)
     #worker(eval_files, "val")

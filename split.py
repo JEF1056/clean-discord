@@ -1,5 +1,6 @@
 import os
 import io
+import time
 import gzip
 import argparse
 from tqdm import tqdm
@@ -28,14 +29,11 @@ def convertline(text, max_length=20):
     return [f"{inputs[i]}\t{targets[i]}" for i in range(len(inputs))] #zip them together in a dict of inputs and targets
 
 def worker(filename, q):
-    try:
-        with io.open(os.path.join(args.dir, filename), mode="r", encoding="utf-8") as f:
-            line = f.readline()
-            while line:
-                q.put(convertline(line.strip()))
-                line=f.readline()
-    except:
-        print(filename)
+    with io.open(os.path.join(args.dir, filename), mode="r", encoding="utf-8") as f:
+        line = f.readline()
+        while line:
+            q.put(convertline(line.strip()))
+            line=f.readline()
     return "DONE"
 
 def listener(q, split):
@@ -71,6 +69,7 @@ def main(files, split):
 
     #now we are done, kill the listener
     q.put('kill')
+    time.sleep(0.01)
     pool.close()
     pool.join()
 

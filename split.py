@@ -29,9 +29,10 @@ def worker(files, split, w, max_length=10):
 if __name__ == '__main__':
     files=[]
     for dir in args.dir:
-        files.extend(os.path.join(dir, i) for i in os.listdir(dir))
+        ofiles=os.listdir(dir)
+        ofiles.remove('stats.json')
+        files.extend(os.path.join(dir, i) for i in ofiles)
     random.shuffle(files)
-    files.remove('stats.json')
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
     print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} filesss")

@@ -1,3 +1,5 @@
+#NOTE: This can be made more efficient by running it with multiprocessing, but I need to solve the issue with writing to one file
+
 import os
 import io
 import gzip
@@ -35,7 +37,7 @@ if __name__ == '__main__':
     random.shuffle(files)
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
-    print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} filesss")
+    print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} files")
     
     with gzip.open(f"{args.out}-train.txt.gz", "wb", compresslevel=args.compression_level) as w:
         worker(train_files, "train", w)

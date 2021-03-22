@@ -37,7 +37,7 @@ def worker(filename, q):
 
 def listener(q, split):
     fst=True
-    with io.open(f"{args.out}-{split}.txt", mode='w', encoding="utf-8") as f:
+    with io.open(f"{args.out}-{split}.txt", mode='wb', encoding="utf-8") as f:
         while 1:
             m = q.get()
             for line in m:

@@ -1,6 +1,7 @@
 import os
 import io
 import gzip
+import random
 import argparse
 from tqdm import tqdm
 
@@ -27,7 +28,7 @@ def worker(files, split, w, max_length=10):
 
 if __name__ == '__main__':
     files=os.listdir(args.dir)
-    files.sort()
+    random.shuffle(files)
     files.remove('stats.json')
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]

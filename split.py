@@ -67,6 +67,7 @@ def main(files, split):
 
 if __name__ == '__main__':
     files=os.path.join(args.dir).sort()
+    files.remove('stats.json')
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
     main(train_files, "train")

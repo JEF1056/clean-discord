@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 if args.workers == None: args.workers= mp.cpu_count()*2
 
-def convertline(text, max_length=20):
+def convertline(text, max_length=10):
     text=text.split("\t") #split the conversation by tabs
     inputs, targets=[],[] #create empty arrays for inputs and targets
     for y in range(1,len(text)): #iterate through the split conversation

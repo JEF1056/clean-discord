@@ -66,7 +66,8 @@ def main(files, split):
     pool.join()
 
 if __name__ == '__main__':
-    files=os.listdir(args.dir).sort()
+    files=os.listdir(args.dir)
+    files.sort()
     files.remove('stats.json')
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]

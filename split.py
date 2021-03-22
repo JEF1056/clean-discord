@@ -10,7 +10,7 @@ parser.add_argument('-dir', nargs="+", default=["data"],
                     help='the data folder containing the processed files on the top level')
 parser.add_argument('-out', type=str, default="context",
                     help='prefix the compressed output file sets')
-parser.add_argument('-compression_level', type=int, default=9, choices=list(range(-1,10)),
+parser.add_argument('-compression_level', type=int, default=9, choices=list(range(0,10)),
                     help='how compressed the file should be')
 args = parser.parse_args()
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
     print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} filesss")
     
-    with gzip.open(f"{args.out}-train.txt.gz", "wb") as w:
+    with gzip.open(f"{args.out}-train.txt.gz", "wb", compresslevel=args.compression_level) as w:
         worker(train_files, "train", w)
-    with gzip.open(f"{args.out}-val.txt.gz", "wb") as w:
+    with gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level) as w:
         worker(eval_files, "val",w)

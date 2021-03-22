@@ -44,6 +44,7 @@ def listener(q, split):
             for line in m:
                 if fst: f.write(line, args.compression_level); fst=False
                 else: f.write("\n"+line, args.compression_level)
+                f.flush()
                 
 def main(files, split):
     #must use Manager queue here, or will not work

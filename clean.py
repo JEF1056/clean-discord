@@ -27,8 +27,6 @@ parser.add_argument("-detox", type=str2bool, nargs='?', const=True, default=Fals
                     help="use detoxify to remove toxic messages")
 parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=False, 
                     help="extract pairs from discord's replies system")
-parser.add_argument("-device", type=str, default="cuda", choices=["cpu", "cuda"],
-                    help="device detoxify should use")
 parser.add_argument("-overwrite", type=str2bool, nargs='?', const=True, default=False, 
                     help="overwrite existing files")
 args = parser.parse_args()

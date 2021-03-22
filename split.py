@@ -1,5 +1,6 @@
 import os
 import io
+import zlib
 import argparse
 from tqdm import tqdm
 import multiprocessing as mp
@@ -9,7 +10,13 @@ parser.add_argument('-dir', type=str, default="data",
                     help='the data folder containing the processed files on the top level')
 parser.add_argument('-out', type=str, default="context",
                     help='prefix the compressed output file sets')
+parser.add_argument('-workers', type=int, default=None,
+                    help='the folder to output txts')
+parser.add_argument('-compression_level', type=int, default=9, choices=list(range(-1,9)),
+                    help='how compressed the file should be')
 args = parser.parse_args()
+
+if args.workers == None: args.workers= mp.cpu_count()*2
 
 def convertline(text, max_length=20):
     text=text.split("\t") #split the conversation by tabs
@@ -37,15 +44,15 @@ def listener(q, split):
                 f.write('killed')
                 break
             for line in m:
-                if fst: f.write(line); fst=False
-                else: f.write("\n"+line)
+                if fst: f.write(zlib.compress(line, args.compression_level)); fst=False
+                else: f.write(zlib.compress("\n"+line, args.compression_level))
                 f.flush()
 
 def main(files, split):
     #must use Manager queue here, or will not work
     manager = mp.Manager()
     q = manager.Queue()    
-    pool = mp.Pool(mp.cpu_count() + 2)
+    pool = mp.Pool(args.workers)
 
     #put listener to work first
     watcher = pool.apply_async(listener, (q, split))

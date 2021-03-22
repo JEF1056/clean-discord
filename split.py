@@ -16,7 +16,7 @@ args = parser.parse_args()
 
 def worker(files, split, w, max_length=10):
     for filename in tqdm(files, desc=f"{split} split..."):
-        with io.open(os.path.join(args.dir, filename), mode="r", encoding="utf-8") as f:
+        with io.open(filename, mode="r", encoding="utf-8") as f:
             line = f.readline()
             while line:
                 line=line.split("\t")
@@ -29,7 +29,7 @@ def worker(files, split, w, max_length=10):
 if __name__ == '__main__':
     files=[]
     for dir in args.dir:
-        files.extend(os.listdir(dir))
+        files.extend(os.path.join(dir, i) for i in os.listdir(dir))
     random.shuffle(files)
     files.remove('stats.json')
     cut_off = int(len(files) * .05)

@@ -18,10 +18,10 @@ def worker(files, split, w, max_length=10):
         with io.open(os.path.join(args.dir, filename), mode="r", encoding="utf-8") as f:
             line = f.readline()
             while line:
-                line=line.split()
+                line=line.split("\t")
                 for y in range(1,len(line)):
                     x=y-max_length if y-max_length >= 0 else 0
-                    w.write(f"{'/b'.join(line[x:y])}\t{line[y]}\n")
+                    w.write(f"{'/b'.join(line[x:y])}\t{line[y]}\n".encode("utf-8"))
                 line=f.readline()
     return "DONE"
 
@@ -32,6 +32,7 @@ if __name__ == '__main__':
     cut_off = int(len(files) * .05)
     train_files, eval_files = files[:-cut_off], files[-cut_off:]
     
-    with gzip.open("compressed.txt.gz", "wb") as w:
+    with gzip.open(f"{args.out}-train.txt.gz", "wb") as w:
         worker(train_files, "train", w)
-    #worker(eval_files, "val")
+    with gzip.open(f"{args.out}-val.txt.gz", "wb") as w:
+        worker(eval_files, "val",w)

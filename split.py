@@ -3,7 +3,6 @@ import io
 import zlib
 import argparse
 from tqdm import tqdm
-import multiprocessing as mp
 
 parser = argparse.ArgumentParser(description='Split dataset in multiple files into train and validation sets')
 parser.add_argument('-dir', type=str, default="data",
@@ -23,7 +22,7 @@ def worker(files, split, max_length=10):
                 with io.open(f"{args.out}-{split}.txt", "w") as w:
                     for y in range(1,len(line)):
                         x=y-max_length if y-max_length >= 0 else 0
-                        w.write(f"{'/b'.join(line[x:y])}\t{line[y]}")
+                        w.write(zlib.compress(f"{'/b'.join(line[x:y])}\t{line[y]}"))
                 line=f.readline()
     return "DONE"
 

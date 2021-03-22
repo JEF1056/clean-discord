@@ -46,6 +46,7 @@ def listener(q, split):
             for line in m:
                 if fst: f.write(line, args.compression_level); fst=False
                 else: f.write("\n"+line, args.compression_level)
+                
 def main(files, split):
     #must use Manager queue here, or will not work
     manager = mp.Manager()
@@ -67,8 +68,8 @@ def main(files, split):
 
     #now we are done, kill the listener
     q.put('kill')
-    pool.close()
-    pool.join()
+    #pool.close()
+    #pool.join()
 
 if __name__ == '__main__':
     files=os.listdir(args.dir)

@@ -12,18 +12,20 @@ parser.add_argument('-dir', nargs="+", default=["data"],
                     help='the data folder containing the processed files on the top level')
 parser.add_argument('-out', type=str, default="context",
                     help='prefix the compressed output file sets')
+parser.add_argument('-max_length', type=int, default=10,
+                    help='maximum number of turns that the inputs amy have')
 parser.add_argument('-compression_level', type=int, default=9, choices=list(range(0,10)),
                     help='how compressed the file should be')
 args = parser.parse_args()
 
-def worker(files, split, w, max_length=10):
+def worker(files, split, w):
     for filename in tqdm(files, desc=f"{split} split..."):
         with io.open(filename, mode="r", encoding="utf-8") as f:
             line = f.readline()
             while line:
                 line=line.split("\t")
                 for y in range(1,len(line)):
-                    x=y-max_length if y-max_length >= 0 else 0
+                    x=y-args.max_length if y-args.max_length >= 0 else 0
                     w.write(f"{'/b'.join(line[x:y])}\t{line[y]}\n".encode("utf-8"))
                 line=f.readline()
     return "DONE"

@@ -1,7 +1,6 @@
 import os
 import io
-import time
-import gzip
+import zlib
 import argparse
 from tqdm import tqdm
 import multiprocessing as mp
@@ -38,14 +37,14 @@ def worker(filename, q):
 
 def listener(q, split):
     fst=True
-    with gzip.open(f"{args.out}-{split}.txt.gz", "wb", compresslevel=args.compression_level) as f:
+    with io.open(f"{args.out}-{split}.txt", mode='w', encoding="utf-8") as f:
         while 1:
             m = q.get()
             for line in m:
-                if fst: f.write(line, args.compression_level); fst=False
-                else: f.write("\n"+line, args.compression_level)
+                if fst: f.write(zlib.compress(line, args.compression_level)); fst=False
+                else: f.write(zlib.compress("\n"+line, args.compression_level))
                 f.flush()
-                
+
 def main(files, split):
     #must use Manager queue here, or will not work
     manager = mp.Manager()

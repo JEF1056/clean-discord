@@ -19,11 +19,11 @@ def worker(files, split, max_length=10):
         with io.open(os.path.join(args.dir, filename), mode="r", encoding="utf-8") as f:
             line = f.readline()
             while line:
-                text=text.split()
+                line=line.split()
                 with io.open(f"{args.out}-{split}.txt", "w") as f:
-                    for y in range(1,len(text)):
+                    for y in range(1,len(line)):
                         x=y-max_length if y-max_length >= 0 else 0
-                        f.write(f"{'/b'.join(text[x:y])}\t{text[y]}")
+                        f.write(f"{'/b'.join(line[x:y])}\t{line[y]}")
                 line=f.readline()
     return "DONE"
 

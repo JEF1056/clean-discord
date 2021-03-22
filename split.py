@@ -19,7 +19,7 @@ def worker(files, split, max_length=10):
             line = f.readline()
             while line:
                 line=line.split()
-                with io.open(f"{args.out}-{split}.txt", "w") as w:
+                with open(f"{args.out}-{split}.txt", "wb") as w:
                     for y in range(1,len(line)):
                         x=y-max_length if y-max_length >= 0 else 0
                         w.write(zlib.compress(f"{'/b'.join(line[x:y])}\t{line[y]}"))

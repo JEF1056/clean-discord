@@ -26,7 +26,7 @@ def worker(files, split, w):
         with io.open(filename, mode="r", encoding="utf-8") as f:
             line = f.readline()
             while line:
-                line=line.split("\t")
+                line=line.strip().replace("\\n", "/n").split("\t")
                 for y in range(1,len(line)):
                     x=y-args.max_length if y-args.max_length >= 0 else 0
                     if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y]}".encode("utf-8")); fst=False

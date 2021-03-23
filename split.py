@@ -29,12 +29,14 @@ def worker(filename):
             line=line.strip().replace("\\n", "/n").split("\t")
             for y in range(1,len(line)):
                 x=y-args.max_length if y-args.max_length >= 0 else 0
-                if args.compression_level != 0:
-                    if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}".encode("utf-8")); fst=False
-                    else: w.write(f"\n{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}".encode("utf-8"))
-                else:
-                    if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}"); fst=False
-                    else: w.write(f"\n{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}")
+                try:
+                    if args.compression_level != 0:
+                        if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}".encode("utf-8")); fst=False
+                        else: w.write(f"\n{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}".encode("utf-8"))
+                    else:
+                        if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}"); fst=False
+                        else: w.write(f"\n{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}")
+                except: print(line[y])
             line=f.readline()
 
 if __name__ == '__main__':

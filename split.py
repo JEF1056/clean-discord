@@ -19,7 +19,6 @@ parser.add_argument('-compression_level', type=int, default=9, choices=list(rang
 args = parser.parse_args()
 
 global fst
-fst=True
 
 def worker(files, split, w):
     global fst
@@ -47,6 +46,8 @@ if __name__ == '__main__':
     print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} files")
     
     with gzip.open(f"{args.out}-train.txt.gz", "wb", compresslevel=args.compression_level) as w:
+        fst=True
         worker(train_files, "train", w)
     with gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level) as w:
+        fst=True
         worker(eval_files, "val",w)

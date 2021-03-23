@@ -29,7 +29,7 @@ def worker(files, split, w):
                 line=line.split("\t")
                 for y in range(1,len(line)):
                     x=y-args.max_length if y-args.max_length >= 0 else 0
-                    if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y]}".encode("utf-8")); fst=False; print("First line")
+                    if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y]}".encode("utf-8")); fst=False
                     else: w.write(f"\n{'/b'.join(line[x:y])}\t{line[y]}".encode("utf-8"))
                 line=f.readline()
     return "DONE"

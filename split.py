@@ -18,7 +18,11 @@ parser.add_argument('-compression_level', type=int, default=9, choices=list(rang
                     help='how compressed the file should be')
 args = parser.parse_args()
 
+global fst
+fst=True
+
 def worker(files, split, w):
+    global fst
     for filename in tqdm(files, desc=f"{split} split..."):
         with io.open(filename, mode="r", encoding="utf-8") as f:
             line = f.readline()
@@ -26,7 +30,8 @@ def worker(files, split, w):
                 line=line.split("\t")
                 for y in range(1,len(line)):
                     x=y-args.max_length if y-args.max_length >= 0 else 0
-                    w.write(f"{'/b'.join(line[x:y])}\t{line[y]}\n".encode("utf-8"))
+                    if fst: w.write(f"{'/b'.join(line[x:y])}\t{line[y]}".encode("utf-8")); fst=False
+                    else: w.write(f"\n{'/b'.join(line[x:y])}\t{line[y]}".encode("utf-8"))
                 line=f.readline()
     return "DONE"
 

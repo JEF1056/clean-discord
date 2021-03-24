@@ -18,6 +18,8 @@ parser.add_argument('-compression_level', type=int, default=9, choices=list(rang
                     help='how compressed the file should be')
 parser.add_argument('-workers', type=int, default=4,
                     help='number of workers to use (reccomended to be core count *2)')
+parser.add_argument('-step', type=str, default="expand", choices=["expand", "mege"],
+                    help='step')
 args = parser.parse_args()
 
 try:os.mkdir("temp")
@@ -43,40 +45,41 @@ def worker(filename, split, id):
     w.close()
 
 if __name__ == '__main__':
-    files=[]
-    for dir in args.dir:
-        ofiles=[os.path.join(dir, file) for file in os.listdir(dir) if file != "stats.json" and file.endswith(".txt")]
-        files.extend(ofiles)
-    random.shuffle(files)
-    cut_off = int(len(files) * .05)
-    train_files, eval_files = files[:-cut_off], files[-cut_off:]
-    print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} files\nFiles will be {'compressed' if args.compression_level != 0 else 'uncompressed'}.")
+    if args.step == "expand":
+        files=[]
+        for dir in args.dir:
+            ofiles=[os.path.join(dir, file) for file in os.listdir(dir) if file != "stats.json" and file.endswith(".txt")]
+            files.extend(ofiles)
+        random.shuffle(files)
+        cut_off = int(len(files) * .05)
+        train_files, eval_files = files[:-cut_off], files[-cut_off:]
+        print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} files\nFiles will be {'compressed' if args.compression_level != 0 else 'uncompressed'}.")
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker, train_files, repeat("train"), range(0, len(train_files))), total=len(train_files), desc="Writing train..."))
-    #with gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level) as w:
-    with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker, eval_files, repeat("eval"), range(0, len(eval_files))), total=len(eval_files), desc="Writing val..."))
+        with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+            ret=list(tqdm(executor.map(worker, train_files, repeat("train"), range(0, len(train_files))), total=len(train_files), desc="Writing train..."))
+        #with gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level) as w:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+            ret=list(tqdm(executor.map(worker, eval_files, repeat("eval"), range(0, len(eval_files))), total=len(eval_files), desc="Writing val..."))
     
-    if args.compression_level != 0: 
-        t=gzip.open(f"{args.out}-train.txt.gz", "wb", compresslevel=args.compression_level)
-        v=gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level)
-    else: 
-        t=io.open(f"{args.out}-train.txt", mode="w", encoding="utf-8")
-        v=io.open(f"{args.out}-val.txt", mode="w", encoding="utf-8")
-    fst=True
-    for file in tqdm(os.listdir("temp"), desc="Merging files..."):
-        if args.compression_level != 0: f=gzip.open(os.path.join("temp", file),'rb')
-        else: f=io.open(os.path.join("temp", file), mode='r', encoding="utf-8")
-        file_content=f.read()
-        if not fst: 
-            if args.compression_level != 0: file_content="\n".encode()+file_content
-            else: file_content="\n"+file_content
-        fst=False
-        if file.startswith("train"):
-            t.write(file_content)
-        elif file.startswith("eval"):
-            v.write(file_content)
-        f.close()
-    t.close(); v.close()
-        
+    if args.step in ["expand", "merge"]:
+        if args.compression_level != 0: 
+            t=gzip.open(f"{args.out}-train.txt.gz", "wb", compresslevel=args.compression_level)
+            v=gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level)
+        else: 
+            t=io.open(f"{args.out}-train.txt", mode="w", encoding="utf-8")
+            v=io.open(f"{args.out}-val.txt", mode="w", encoding="utf-8")
+        fst=True
+        for file in tqdm(os.listdir("temp"), desc="Merging files..."):
+            if args.compression_level != 0: f=gzip.open(os.path.join("temp", file),'rb')
+            else: f=io.open(os.path.join("temp", file), mode='r', encoding="utf-8")
+            file_content=f.read()
+            if not fst: 
+                if args.compression_level != 0: file_content="\n".encode()+file_content
+                else: file_content="\n"+file_content
+            fst=False
+            if file.startswith("train"):
+                t.write(file_content)
+            elif file.startswith("eval"):
+                v.write(file_content)
+            f.close()
+        t.close(); v.close()

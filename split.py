@@ -18,7 +18,7 @@ parser.add_argument('-compression_level', type=int, default=9, choices=list(rang
                     help='how compressed the file should be')
 parser.add_argument('-workers', type=int, default=4,
                     help='number of workers to use (reccomended to be core count *2)')
-parser.add_argument('-step', type=str, default="expand", choices=["expand", "mege"],
+parser.add_argument('-step', type=str, default="expand", choices=["expand", "merge"],
                     help='step')
 args = parser.parse_args()
 

@@ -69,7 +69,10 @@ if __name__ == '__main__':
         if args.compression_level != 0: f=gzip.open(os.path.join("temp", file),'rb')
         else: f=io.open(os.path.join("temp", file), mode='r', encoding="utf-8")
         file_content=f.read()
-        if not fst: file_content="\n"+file_content
+        if not fst: 
+            if args.compression_level != 0: file_content="\n".encode()+file_content
+            else: file_content="\n"+file_content
+        fst=False
         if file.startswith("train"):
             t.write(file_content)
         elif file.startswith("eval"):

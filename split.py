@@ -36,7 +36,7 @@ def worker(filename, split, id):
             for y in range(1,len(line)):
                 x=y-args.max_length if y-args.max_length >= 0 else 0
                 try:
-                    out=f"{'/b'.join(line[x:y])}\t{line[y].split(': ')[1]}"
+                    out=f"{'/b'.join(line[x:y])}\t{': '.join(line[y].split(': ')[1:])}"
                     if args.compression_level != 0: out=out.encode("utf-8")
                     if fst: w.write(out); fst=False
                     else: w.write(("\n").encode("utf-8")+out) if args.compression_level != 0 else w.write("\n"+out)

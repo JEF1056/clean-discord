@@ -57,7 +57,6 @@ r1=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U
 r2=re.compile(r'@Deleted User')
 r3=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:.+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?![:;][3DP])[^a-z0-9.,\'@!?\s\/'+''.join(emojis)+r']+|([a-z])\s([.,\'@!?\/])', flags=re.DOTALL | re.IGNORECASE)
 r4=re.compile(r"([a-z.])\1{3,}|([,\'@!?\s\/])\2+", re.IGNORECASE)
-r5=re.compile(r'['+"".join(emojis)+r']')
 
 def convemojis(i):
     if i in emojis: return emojis[i]
@@ -73,7 +72,7 @@ def clean(text, author=None):
     text= re.sub(r3, r"\2\3", text.strip()) #remove urls, emails, code blocks, custom emojis, non-emoji, punctuation, letters, and phone numbers
     text= re.sub(r4, r"\1\1\1\2", text) #handle excessive repeats of punctuation, limited to 3, repeated words, excessive spaces or excessive punctuation, spaces before punctuation but after text
     text= "".join(list(map(convemojis,text))) #translate emojis to their `:text:` shorthand form
-    text= text.replace("\n","\\n").strip().strip("\\n").strip("\t") #handle newlines
+    text= text.strip().replace("\n","\\n").strip("\t") #handle newlines
          
     if text != "\\n" and text != " " and text != "" and author==None:
         return text
@@ -169,6 +168,7 @@ hahaha but my best invention yet, my friend @Deleted User and @Deleted User. The
                      plenty              of                      spaces               ???????????????       🥲
 fine. one last resort. my email is contact@j-fan.ml and you can join my server at https://jadeai.ml/server. Join or else.
 if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 will work
+on
     """
     
     print("Running a clean test case ~~~~~~~~")

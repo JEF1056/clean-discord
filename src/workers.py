@@ -168,7 +168,6 @@ hahaha but my best invention yet, my friend @Deleted User and @Deleted User. The
                      plenty              of                      spaces               ???????????????       🥲
 fine. one last resort. my email is contact@j-fan.ml and you can join my server at https://jadeai.ml/server. Join or else.
 if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 will work
-on
     """
     
     print("Running a clean test case ~~~~~~~~")

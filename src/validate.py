@@ -3,25 +3,31 @@ import io
 import json
 from tqdm import tqdm
 
+def find_count(filename):
+    with open(filename, 'rb') as f:
+        f.seek(-2, os.SEEK_END)
+        while f.read(1) != b' ':
+            f.seek(-2, os.SEEK_CUR)
+        last_line = f.readline().decode()
+        return last_line    
+
 def check_files(dir, server=""):
-    failed, num_processed=[],0
+    global ran_checks
+    failed, num_processed, total=[],0,0
     for file in os.listdir(dir):
         if file.startswith(server) or server=="":
-            with open(os.path.join(dir,file), 'rb') as f:
-                f.seek(-2, os.SEEK_END)
-                while f.read(1) != b' ':
-                    f.seek(-2, os.SEEK_CUR)
-                last_line = f.readline().decode()
-                try: int(last_line)
-                except: failed.append(f"{file} ||| {last_line}")
-                num_processed+=1
+            last_line=find_count(os.path.join(dir,file))
+            try: total+=int(last_line)
+            except: failed.append(f"{file} ||| {last_line}")
+            num_processed+=1
 
     assert num_processed != 0, f"No files processed/No files in dir:{dir}"
     if failed != []:
         if input("Found errors:\n\n"+"\n".join(failed)+"\n\nFix files? Type one of the following:  [y,yes]\n> ") in ["yes",'y']:
             fix_files(dir, [i.split(" ||| ")[0] for i in failed])
         else: assert failed == [], f"Some files in data directory are incomplete downloads (see above)"
-    return "All files passed."
+    ran_checks=True
+    return total
 
 def fix_files(dir, filenames):
     assert type(filenames)==list, "inputs must be a list of filenames in the directory"

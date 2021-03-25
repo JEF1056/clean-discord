@@ -1,76 +1,85 @@
-import io
 import os
-from tqdm import tqdm
+import io
+import gzip
+import random
 import argparse
-import numpy as np
-from src.helpers import str2bool as s2b
+from tqdm import tqdm
+import concurrent.futures
+from itertools import repeat
 
-parser = argparse.ArgumentParser(description='Clean Discord data')
-parser.add_argument('-dir', type=str, default="data",
-                    help='the data folder containing preprocessed data to merge and split')
+parser = argparse.ArgumentParser(description='Split dataset in multiple files into train and validation sets')
+parser.add_argument('-dir', nargs="+", default=["data"],
+                    help='the data folder containing the processed files on the top level')
 parser.add_argument('-out', type=str, default="context",
-                    help='prefix for the files to be written')
-parser.add_argument('-div_symbol', type=str, default="/b",
-                    help='prefix for the files to be written')
-parser.add_argument('-newline_symbol', type=str, default="/n",
-                    help='prefix for the files to be written')
-parser.add_argument('-split', type=float, default=0.95,
-                    help='split% for training data')
-parser.add_argument('-chunks', type=int, default=20,
-                    help='max length of the dataset')
-parser.add_argument('-max_len', type=int, default=2048,
-                    help='max length of the dataset')
-parser.add_argument("-ascii", type=s2b, nargs='?', const=True, default=False,
-                    help="debugging flag")
-parser.add_argument("-shuffle", type=s2b, nargs='?', const=True, default=False,
-                    help="debugging flag")
+                    help='prefix the compressed output file sets')
+parser.add_argument('-max_length', type=int, default=10,
+                    help='maximum number of turns that the inputs amy have')
+parser.add_argument('-compression_level', type=int, default=9, choices=list(range(0,10)),
+                    help='how compressed the file should be')
+parser.add_argument('-workers', type=int, default=4,
+                    help='number of workers to use (reccomended to be core count *2)')
+parser.add_argument('-step', type=str, default="expand", choices=["expand", "merge"],
+                    help='step')
 args = parser.parse_args()
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(lst), n):
-        yield "\t".join(lst[i:i + n])
+try:os.mkdir("temp")
+except: pass
 
-data=[]
-for file in os.listdir(args.dir):
-    for convo in tqdm(io.open(os.path.join(args.dir,file), mode="r", encoding="utf-8").read().strip().split("\n"), desc=f"Chunking {file}"):
-        dta=list(chunks(convo.split("\t"), args.chunks+1))
-        data.extend(dta)
-data=list(filter(None, data))
+def worker(filename, split, id):
+    fst=True
+    if args.compression_level != 0: w=gzip.open(os.path.join("temp", f"{split}-{id}.temp.gz"), "wb", compresslevel=args.compression_level)
+    else: w=io.open(os.path.join("temp", f"{split}-{id}.temp"), mode="w", encoding="utf-8")
+    with io.open(filename, mode="r", encoding="utf-8") as f:
+        line = f.readline()
+        while line:
+            line=line.strip().replace("\\n", "/n").split("\t")
+            for y in range(1,len(line)):
+                x=y-args.max_length if y-args.max_length >= 0 else 0
+                try:
+                    out=f"{'/b'.join(line[x:y])}\t{': '.join(line[y].split(': ')[1:])}"
+                    if args.compression_level != 0: out=out.encode("utf-8")
+                    if fst: w.write(out); fst=False
+                    else: w.write(("\n").encode("utf-8")+out) if args.compression_level != 0 else w.write("\n"+out)
+                except: pass
+            line=f.readline()
+    w.close()
 
-with io.open(os.path.join(f"{args.out}-train.txt"), mode="w", encoding="utf-8") as t,  io.open(os.path.join(f"{args.out}-val.txt"), mode="w", encoding="utf-8") as v:
-    dist=np.random.choice(["t","v"], size=len(data), p=[args.split,1-args.split])
-    train=[e for i,e in enumerate(data) if dist[i]=="t"]
-    val=[e for i,e in enumerate(data) if dist[i]=="v"]
-    del data
-    del dist
-    if args.shuffle:
-        np.random.shuffle(train)
-        np.random.shuffle(val)
-    for line in tqdm(train, desc="Cleaning lines for train split"): 
-        bld=line.split("\t")[0]
-        for dta in line.split("\t")[1:]:
-            try:
-                if args.ascii: dta = dta.encode("ascii", "ignore").decode()
-                if dta.endswith("\\n"): dta[:-2]
-                if dta.split(": ")[1] != "" and dta.split(": ")[1] != " ":
-                    ln=bld+"\t"+dta.split(": ")[1]+"\n"
-                    if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                    t.write(ln.replace("\\n",args.newline_symbol))
-                    bld+=args.div_symbol+dta
-                    if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
-            except: pass
+if __name__ == '__main__':
+    if args.step == "expand":
+        files=[]
+        for dir in args.dir:
+            ofiles=[os.path.join(dir, file) for file in os.listdir(dir) if file != "stats.json" and file.endswith(".txt")]
+            files.extend(ofiles)
+        random.shuffle(files)
+        cut_off = int(len(files) * .05)
+        train_files, eval_files = files[:-cut_off], files[-cut_off:]
+        print(f"Train size: {len(train_files)} files\tVal size: {len(eval_files)} files\nFiles will be {'compressed' if args.compression_level != 0 else 'uncompressed'}.")
 
-    for line in tqdm(val, desc="Cleaning lines for val split"): 
-        bld=line.split("\t")[0]
-        for dta in line.split("\t")[1:]:
-            try:
-                if args.ascii: dta = dta.encode("ascii", "ignore").decode()
-                if dta.endswith("\\n"): dta[:-2]
-                if dta.split(": ")[1] != "" and dta.split(": ")[1] != " ":
-                    ln=bld+"\t"+dta.split(": ")[1]+"\n"
-                    if args.ascii: ln=ln.encode("ascii", "ignore").decode()
-                    v.write(ln.replace("\\n",args.newline_symbol))
-                    bld+=args.div_symbol+dta
-                    if len(bld.replace(args.div_symbol, " ")) >= int(args.max_len*1.5):break
-            except: pass
+        with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+            ret=list(tqdm(executor.map(worker, train_files, repeat("train"), range(0, len(train_files))), total=len(train_files), desc="Writing train..."))
+        #with gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level) as w:
+        with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+            ret=list(tqdm(executor.map(worker, eval_files, repeat("eval"), range(0, len(eval_files))), total=len(eval_files), desc="Writing val..."))
+    
+    if args.step in ["expand", "merge"]:
+        if args.compression_level != 0: 
+            t=gzip.open(f"{args.out}-train.txt.gz", "wb", compresslevel=args.compression_level)
+            v=gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level)
+        else: 
+            t=io.open(f"{args.out}-train.txt", mode="w", encoding="utf-8")
+            v=io.open(f"{args.out}-val.txt", mode="w", encoding="utf-8")
+        fst=True
+        for file in tqdm(os.listdir("temp"), desc="Merging files..."):
+            if args.compression_level != 0: f=gzip.open(os.path.join("temp", file),'rb')
+            else: f=io.open(os.path.join("temp", file), mode='r', encoding="utf-8")
+            file_content=f.read()
+            if not fst: 
+                if args.compression_level != 0: file_content="\n".encode()+file_content
+                else: file_content="\n"+file_content
+            fst=False
+            if file.startswith("train"):
+                t.write(file_content)
+            elif file.startswith("eval"):
+                v.write(file_content)
+            f.close()
+        t.close(); v.close()

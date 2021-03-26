@@ -36,23 +36,51 @@ You may use custom data, formatted properly, to use this script. Your input json
 }
 ```
 ### Benchmarking the script
-Regex, parsing, and classification performance can vary from device to device. See the [README in src](./src/src) tested on a GCP e2-highcpu-4 machine.
+Regex, parsing, and classification performance can vary from device to device. See the [README in src](./src/README.md) tested on a 3.0ghz CPU (the test is single-threaded).
 
-If you would like to run the benchmark, you can use the <a href="./data\Test [116101115116116120].json">provided json</a> and run:
+If you would like to run the benchmark, you run the following command from the base directory:
 ```
 python3 src/workers.py
 ```
-### Running the script
-All functionality of this repo can be accessed with [clean.py](./clean.py).
+### Cleaning files
+All cleaning functionality of this repo can be accessed with [clean.py](./clean.py).
 
 My super large [discord dataset](https://www.kaggle.com/jef1056/discord-data) with over *300 million messages* was cleaned using the command on a 4-core machine with 4gb of memory, in approximately 6 hours.
 ```
 python3 clean.py -detox -workers 8 -dir ../data -out ../cleaned
 ```
 
+### Creating a compressed dataset and splits
+Using the dataset as-is is completely feasible, but it is recommended to create proper splits and also generate all possible turns in a conversation.
+Take this conversation for example:
+```
+Hi    How are you?    Im doing well    This is a conversation?    Yes.    Huh    Its also a test
+```
+You can make the most out of the turns in this conversation by creating all windows of this conversation (input turns are separated by /b):
+```
+Hi    How are you?
+Hi/bHow are you?    Im doing well
+Hi/bHow are you?/bIm doing well/bThis is a conversation?    Yes.
+Hi/bHow are you?/bIm doing well/bThis is a conversation?/bYes.    Huh
+Hi/bHow are you?/bIm doing well/bThis is a conversation?/bYes./bHuh    Its also a test
+```
+You can also limit the number of turns in a conversation by this means. As expanding the number of examples this way increases the size of the dataset dramatically, it is recommended to compress the dataset. TensorFlow Datasets supports compressed files for easy streaming and shuffling during training.
+
+To generate splits, you may run the command
+```
+python3 split.py -compression_level 9 -workers 8 -dir ../data -out ../context
+```
+Note that the `-out` parameter is a prefix, and `-train.txt`/`-train.txt.gz` and `-val.txt`/`-val.txt.gz` will be appended to the split accordingly.
+The script will create a directory named `temp` that contains all the partitioned files individually named in the format `[SPLIT]-ID.txt`/`[SPLIT]-ID.txt.gz`, which can will be merged automatically or later by running:
+```
+python3 split.py -step merge
+```
+
 ## How is it done?
 The process of cleaning the data includes removing a lot of the issues that can be found in discord chat logs, including:
 > Please add a pull request or an issue if you can think of any other cases this script should cover!
+- Filtering [common prefixes](./src/prefixes.txt) for popular bots on discord
+- Filtering common system messages, such as pins, server joins, etc.
 - Translating "special" unicode-based characters into the english alphabet (text like `𝔾𝕣𝕒𝕟𝕕𝕞𝕒'𝕤 🅂🄲🄰🅁🅈 ɖօɢ` to `Grandma's SCARY DOG` (a real username btw))
 - Converting excessive spaces and unicode spaces to traditional spaces (text like `hi  		, you!` to `hi, you`)
 - Replace users who left the the server(s) without being properly cached (they show up as `Deleted User`) with a random [name](./src/names.txt) that is attached to their id (names like `@Deleted User` to `@Jake`)

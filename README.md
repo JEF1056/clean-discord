@@ -96,4 +96,4 @@ The process of cleaning the data includes removing a lot of the issues that can 
 - Removing custom emojis (like `:pogchamp:`)
 - Removing toxic messages (like `f*** you`) *note: example is censored
 
-Doing this for a lot of data (millions of messages) is extremely difficult to do, and this repo employs a lot of optimizations. If you're a developer and would like to benchmark the functionality of the scripts, you can run the script in [src/workers.py](./src/workers.py), which contains benchmarking tools. See the [README in src](./src/src) for my benchmark results.
+Doing this for a lot of data (millions of messages) is extremely difficult to do, and this repo employs a lot of optimizations. If you're a developer and would like to benchmark the functionality of the scripts, you can run the script in [src/workers.py](./src/workers.py), which contains benchmarking tools. See the [README in src](./src/README.md) for my benchmark results.

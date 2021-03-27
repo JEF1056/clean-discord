@@ -63,6 +63,8 @@ def convemojis(i):
     return i
 
 def clean(text, author=None):
+    if text.lower() == "welcome" or text.lower().startswith("welcome"): return None #welcome is the bane of exisitence and needs to be culled
+    if "@everyone" in text.lower() or "@here" in text.lower(): return None #no need for these kinds of pings, and messages in them are even more useless.
     if text.lower().startswith(bot_prefixes): return None #handle bot commands
     if author != None and text == "Deleted User": return gen_name(author).strip()
     

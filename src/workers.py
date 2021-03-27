@@ -53,7 +53,7 @@ def write_stats(ret, dir):
     json.dump({"messages_total":messages_total,"conversations_total":conversations_total, "removed_total":removed_total, "num_files":len(ret), "num_channels":len(new_ret), "individual":ret, "merged":new_ret}, open(os.path.join(dir,"stats.json"),"w"))
     
 #precompile regex
-r1=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t ]{2,}')
+r1=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]+| {2,}')
 r2=re.compile(r'@Deleted User')
 r3=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[a-z0-9]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!\d{0,2}[:;]([3DPO]|\d{2}))[^a-z0-9.,\'@!?\s\/'+''.join(emojis)+r']+|([a-z])\s([.,\'!?\/])', flags=re.DOTALL | re.IGNORECASE)
 r4=re.compile(r"([a-z.])\1{3,}|([,\'!?\s\/])\2+", re.IGNORECASE)

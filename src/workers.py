@@ -90,14 +90,14 @@ def antispam(conversation):
         if len(convo) < 1500 and len(": ".join(convo.split(": ")[1:])) > 2:
             try:
                 for group in re.search(r5, convo).groups():
-                    if len(str(group)) >= 40:
+                    if len(str(group))*2 >= 30:
                         res.append(1)
                     else:
                         res.append(0)
             except:
                 res.append(0)
         else: res.append(1)
-    return np.asarray(res)
+    return np.array(res)
 
 def worker_regex(filename, input_folder, output_folder, max_context=1000, debug=False):
     if debug: profiler = Profiler(); profiler.start()

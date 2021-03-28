@@ -74,6 +74,7 @@ def run_antispam(to_clean):
         
 if __name__ == '__main__':
     if not args.skip_validation: check_files(args.dir)
+    if args.step == "all": args.step = ["regex", "detox", "antispam"]
     for step in args.step:
         if step == "regex":
             run_regex()

@@ -57,6 +57,7 @@ r1=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U
 r2=re.compile(r'@Deleted User')
 r3=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[a-z0-9]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|(?<=[.,!?()]) (?=[.,!?()])|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!\d{0,2}[:;]([3DPO]|\d{2}))[^a-z0-9.,\'@!?\s\/'+''.join(emojis)+r']+|([a-z])\s([.,\'!?\/])', flags=re.DOTALL | re.IGNORECASE)
 r4=re.compile(r"([a-z.])\1{3,}|([,\'!?\s\/])\2+", re.IGNORECASE)
+r5=re.compile(r"(.{3,})\1", re.IGNORECASE | re.DOTALL)
 
 def convemojis(i):
     if i in emojis: return emojis[i]
@@ -82,6 +83,21 @@ def clean(text, author=None):
         return " ".join(text.split(" ")[-2:])
     else:
         return None
+    
+def antispam(conversation):
+    res=[]
+    for convo in conversation:
+        if len(convo) < 1500 and len(": ".join(convo.split(": ")[1:])) > 2:
+            try:
+                for group in re.search(r5, convo).groups():
+                    if len(str(group)) >= 40:
+                        res.append(1)
+                    else:
+                        res.append(0)
+            except:
+                res.append(0)
+        else: res.append(1)
+    return np.asarray(res)
 
 def worker_regex(filename, input_folder, output_folder, max_context=1000, debug=False):
     if debug: profiler = Profiler(); profiler.start()
@@ -136,6 +152,28 @@ def worker_detox(filename, input_folder, output_folder, debug=False):
                 else: f.write("\n"+"\t".join(line))
             else: count["removed_messages"] +=1
             
+def worker_antispam(filename, input_folder, output_folder, debug=False):
+    if debug: profiler = Profiler(); profiler.start()
+    file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
+    ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
+    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
+        while True:
+            line = file_data.readline().strip()
+            if not line:
+                os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+                if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
+                return count
+            count["conversations"]+=1
+            line=np.array(line.split("\t"))
+            pred_map=antispam(line)
+            count["removed_messages"] += np.count_nonzero(pred_map == 1)
+            count["messages"] += np.count_nonzero(pred_map == 0)
+            line=line[pred_map < 1]
+            if len(line) > 1:
+                if fst: f.write("\t".join(line)); fst=False
+                else: f.write("\n"+"\t".join(line))
+            else: count["removed_messages"] +=1 
+            
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Clean Discord data')
@@ -143,7 +181,7 @@ if __name__ == '__main__':
                         help='the fonlder that contains the data file')
     parser.add_argument('-out', type=str, default="output",
                         help='the folder to output txts')
-    parser.add_argument('-step', type=str, default="all",
+    parser.add_argument('-step', type=str, nargs="+", default="all",
                         help='the step to start cleaning from')
     args = parser.parse_args()
     
@@ -176,23 +214,23 @@ if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 w
     print(clean(worstcase_clean).replace("\\n","\n"))
     print("Clean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     
-    if args.step == "all":
-        steps=["regex", "pairs", "detox"]
-    else:
-        try:
-            steps=json.loads(args.step)
-            assert type(steps)==list
-        except: raise Exception("Unable to load steps json.")
-    for step in steps:
+    for step in args.step:
         if step == "regex":
+            try:os.mkdir(args.out)
+            except: pass
             print("\033[1mRunning regex test\033[0m")
             ret=[worker_regex(os.listdir(args.dir)[0], args.dir, args.out, debug=True)]
             write_stats(ret, args.out)
-        elif step == "pairs":
-            print("\033[1mPairs test not implemented\033[0m")
-            pass #not implemented
         elif step == "detox":
+            try:os.mkdir(args.out+"-detox")
+            except: pass
             print(f"\033[1mRunning detox test\033[0m")
             ret=[worker_detox([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True)]
             write_stats(ret, args.out+"-detox")
+        elif step == "antispam":
+            try:os.mkdir(args.out+"-antispam")
+            except: pass
+            print("\033[1mRunning antispam test\033[0m")
+            ret=[worker_antispam([f for f in os.listdir(args.out+"-detox") if f.endswith(".txt")][0], args.out+"-detox", args.out+"-antispam", debug=True)]
+            write_stats(ret, args.out+"-antispam")
     print("DONE")

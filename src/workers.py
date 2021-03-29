@@ -214,6 +214,7 @@ if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 w
     print(clean(worstcase_clean).replace("\\n","\n"))
     print("Clean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
     
+    if args.step == "all": args.step = ["regex", "detox", "antispam"]
     for step in args.step:
         if step == "regex":
             try:os.mkdir(args.out)

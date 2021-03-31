@@ -53,11 +53,10 @@ def write_stats(ret, dir):
     json.dump({"messages_total":messages_total,"conversations_total":conversations_total, "removed_total":removed_total, "num_files":len(ret), "num_channels":len(new_ret), "individual":ret, "merged":new_ret}, open(os.path.join(dir,"stats.json"),"w"))
     
 #precompile regex
-r1=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]+| {2,}')
-r2=re.compile(r'@Deleted User')
-r3=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[a-z0-9]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|(?!\d{0,2}[:;]([3DPO]\d{2})(\s|$))[^a-z0-9.,\'\”@!?\s\/'+''.join(emojis)+r']+|(?<=[a-z.,\'!?\/]) +(?=[.,\'!?\/])', flags=re.DOTALL | re.IGNORECASE)
-r4=re.compile(r"([a-z.])\1{3,}|([,\'!?\s\/])\2+", re.IGNORECASE)
-r5=re.compile(r"(.{3,})\1", re.IGNORECASE | re.DOTALL)
+r1=re.compile(r'@Deleted User')
+r2=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[a-z0-9]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(?:\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|[^a-z0-9.,:;\'\”@!?\s\/'+''.join(emojis)+chr(0)+r']+|(?<=[a-z.,\':;!?\/]) +(?=[.,\':;!?\/])|([a-z.])\1{3,}|([,\':;!?\s\/])\2+', flags=re.DOTALL | re.IGNORECASE)
+r3=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]+| {2,}')
+r4=re.compile(r"(.{3,})\1", re.IGNORECASE | re.DOTALL)
 
 def convemojis(i):
     if i in emojis: return emojis[i]
@@ -67,20 +66,28 @@ def clean(text, author=None):
     if text.lower() == "welcome" or text.lower().startswith("welcome"): return None #welcome is the bane of exisitence and needs to be culled
     if "@everyone" in text.lower() or "@here" in text.lower(): return None #no need for these kinds of pings, and messages in them are even more useless.
     if text.lower().startswith(bot_prefixes): return None #handle bot commands
-    if author != None and text == "Deleted User": return gen_name(author).strip()
+    if author:
+        if text.startswith("Deleted User"): text=gen_name(author)+text[len("Deleted User"):]
+        elif text.startswith(chr(0)): text=gen_name(author)+text
     
     text=text.translate(normal_map)#handle special chars from other langs
-    text= re.sub(r1, " ", text) #handle... interesting spaces
-    if author == None: text= re.sub(r2, gen_name, text) #replace "deleted users" with names
-    text= re.sub(r3, r"\2\3", text.strip()) #remove urls, emails, code blocks, custom emojis, non-emoji, punctuation, letters, and phone numbers
-    text= re.sub(r4, r"\1\1\1\2", text) #handle excessive repeats of punctuation, limited to 3, repeated words, excessive spaces or excessive punctuation, spaces before punctuation but after text
+    text= re.sub(r1, gen_name, text) #replace "deleted users" with names
+    text= re.sub(r2, r"\1\1\1\2", text.strip()) #remove urls, emails, code blocks, custom emojis, non-emoji, punctuation, letters, and phone numbers
+    text= re.sub(r3, " ", text) #handle... interesting spaces
     text= "".join(list(map(convemojis,text))) #translate emojis to their `:text:` shorthand form
-    text= text.strip().replace("\n","\\n").strip("\t") #handle newlines
+    text= "\\n".join([ln.strip().strip("\t") for ln in text.split("\n")]) #handle newlines
          
-    if text != "\\n" and text != " " and text != "" and author==None:
-        return text
-    elif text != "\\n" and text != " " and text != "" and author!=None:
-        return " ".join(text.split(" ")[-2:])
+    if text != chr(0) and author:
+        text=text.split(chr(0))
+        if not text[0] in ["", "\\n", "\n", " ", "\t"] and not text[1] in ["", "\\n", "\n", " ", "\t"]:
+            return text
+        else:
+            return None
+    elif not author:
+        if not text in ["", "\\n", "\n", " ", "\t"]:
+            return text
+        else:
+            return None
     else:
         return None
     
@@ -89,7 +96,7 @@ def antispam(conversation):
     for convo in conversation:
         if len(convo) < 1500 and len(": ".join(convo.split(": ")[1:])) > 2:
             try:
-                for group in re.search(r5, convo).groups():
+                for group in re.search(r4, convo).groups():
                     if len(str(group))*2 >= 30:
                         res.append(1)
                     else:
@@ -107,8 +114,9 @@ def worker_regex(filename, input_folder, output_folder, max_context=1000, debug=
         msg, last_seen, last_author, curr_time=[],None,"",0
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
-                content, author=clean(data["content"]),clean(data["author"]["name"], author=data["author"]["id"])
-                if content and author:
+                cl=clean(data["author"]["name"]+chr(0)+data["content"], author=data["author"]["id"])
+                if cl:
+                    author, content = cl
                     if last_author != author or len(msg)==0:
                         msg.append(f'{author}: {content}')
                         count["messages"]+=1
@@ -208,6 +216,7 @@ hahaha but my best invention yet, my friend @Deleted User and @Deleted User. The
                      plenty              of                      spaces               ???????????????       🥲
 fine. one last resort. my email is contact@j-fan.ml and you can join my server at https://jadeai.ml/server. Join or else.
 if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 will work. meet me at 12:00 :3
+✧・ﾟ:*ａｎｇｅｌａ*:･ﾟ☆✧ ::::::: I am the best
     """
     print("Running a clean test case ~~~~~~~~")
     print(f"{worstcase_clean}\nRaw ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")

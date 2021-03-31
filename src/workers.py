@@ -115,20 +115,18 @@ def worker_regex(filename, input_folder, output_folder, max_context=1000, debug=
         for data in messages:
             if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
                 cl=clean(data["author"]["name"]+chr(0)+data["content"], author=data["author"]["id"])
-                if cl:
-                    try:
-                        author, content = cl
-                        if last_author != author or len(msg)==0:
-                            msg.append(f'{author}: {content}')
-                            count["messages"]+=1
-                            curr_time=ciso8601.parse_datetime(data['timestamp'])
-                            if len(msg)==max_context or (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
-                                msg="\t".join(msg)
-                                if fst: f.write(msg); fst=False
-                                else: f.write("\n"+msg)
-                                msg=[]; last_author=""; last_seen=None; count["conversations"]+=1
-                            last_author = author
-                    except: print(cl)
+                if cl and len(cl) == 2:
+                    author, content = cl
+                    if last_author != author or len(msg)==0:
+                        msg.append(f'{author}: {content}')
+                        count["messages"]+=1
+                        curr_time=ciso8601.parse_datetime(data['timestamp'])
+                        if len(msg)==max_context or (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
+                            msg="\t".join(msg)
+                            if fst: f.write(msg); fst=False
+                            else: f.write("\n"+msg)
+                            msg=[]; last_author=""; last_seen=None; count["conversations"]+=1
+                        last_author = author
                     else:
                         msg[len(msg)-1]+=f"\\n{content}"
                 else:

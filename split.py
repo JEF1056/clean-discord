@@ -69,7 +69,9 @@ if __name__ == '__main__':
             t=io.open(f"{args.out}-train.txt", mode="w", encoding="utf-8")
             v=io.open(f"{args.out}-val.txt", mode="w", encoding="utf-8")
         fst=True
-        for file in tqdm(os.listdir("temp"), desc="Merging files..."):
+        to_process=os.listdir("temp")
+        random.shuffle(to_process)
+        for file in tqdm(to_process, desc="Merging files..."):
             if args.compression_level != 0: f=gzip.open(os.path.join("temp", file),'rb')
             else: f=io.open(os.path.join("temp", file), mode='r', encoding="utf-8")
             file_content=f.read()

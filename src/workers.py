@@ -8,7 +8,7 @@ import ciso8601
 import numpy as np
 from pyinstrument import Profiler
 from profanity_check import predict
-from src.helpers import clean
+from helpers import clean
     
 def write_stats(ret, dir):
     messages_total, conversations_total, removed_total, new_ret=0,0,0, {}

@@ -1,11 +1,5 @@
 import re, io, json, random
 
-#precompile regex
-r1=re.compile(r'@Deleted User')
-r2=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[a-z0-9]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(?:\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|[^a-z0-9.,:;\'\”@!?\s\/'+''.join(emojis)+chr(0)+r']+|(?<=[a-z.,\':;!?\/]) +(?=[.,\':;!?\/])|([a-z.])\1{3,}|([,\':;!?\s\/])\2+', flags=re.DOTALL | re.IGNORECASE)
-r3=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]+| {2,}')
-r4=re.compile(r"(.{3,})\1", re.IGNORECASE | re.DOTALL)
-
 normalize_chars={'Š':'S', 'š':'s', 'Ð':'Dj','Ž':'Z', 'ž':'z', 'À':'A', 'Á':'A', 'Â':'A', 'Ã':'A', 'Ä':'A',
     'Å':'A', 'Æ':'A', 'Ç':'C', 'È':'E', 'É':'E', 'Ê':'E', 'Ë':'E', 'Ì':'I', 'Í':'I', 'Î':'I',
     'Ï':'I', 'Ñ':'N', 'Ń':'N', 'Ò':'O', 'Ó':'O', 'Ô':'O', 'Õ':'O', 'Ö':'O', 'Ø':'O', 'Ù':'U', 'Ú':'U',
@@ -42,6 +36,12 @@ def gen_name(username):
 def convemojis(i):
     if i in emojis: return emojis[i]
     return i
+
+#precompile regex
+r1=re.compile(r'@Deleted User')
+r2=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[a-z0-9]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(?:\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|[^a-z0-9.,:;\'\”@!?\s\/'+''.join(emojis)+chr(0)+r']+|(?<=[a-z.,\':;!?\/]) +(?=[.,\':;!?\/])|([a-z.])\1{3,}|([,\':;!?\s\/])\2+', flags=re.DOTALL | re.IGNORECASE)
+r3=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]+| {2,}')
+r4=re.compile(r"(.{3,})\1", re.IGNORECASE | re.DOTALL)
 
 def clean(text, author=False):
     if text.lower() == "welcome" or text.lower().startswith("welcome"): return None #welcome is the bane of exisitence and needs to be culled

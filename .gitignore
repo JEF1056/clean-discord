@@ -6,7 +6,7 @@ context*
 *.temp
 !commonquestions.txt
 !commonconvos.txt
-*.txt
+*.txt*
 *.json
 !stats*.json
 !Test*.json

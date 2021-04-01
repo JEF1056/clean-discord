@@ -56,7 +56,7 @@ for part, i in enumerate(range(int(len(out)/partitions), len(out), int(len(out)/
     for line in out[i-int(len(out)/partitions):i]:
         if not fst: line="\n"+line
         else: fst=False
-        if compression_level != 0: line.encode()
+        if compression_level != 0: line=line.encode()
         t.write(line)
         pbar.update(1)
     t.close()
@@ -72,7 +72,7 @@ for part, i in enumerate(range(int(len(val)/partitions), len(val), int(len(val)/
     for line in val[i-int(len(val)/partitions):i]:
         if not fst: line="\n"+line
         else: fst=False
-        if compression_level != 0: line.encode()
+        if compression_level != 0: line=line.encode()
         t.write(line)
         pbar.update(1)
     t.close()

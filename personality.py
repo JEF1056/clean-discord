@@ -10,7 +10,7 @@ names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split(
 max_len=10
 compression_level=9
 output_file="personality"
-partitions= 3000
+partitions= 2000
 
 def gen_all(line):
     line=line.strip().replace("\\n", "/n").split("\t")

@@ -18,7 +18,7 @@ parser.add_argument('-compression_level', type=int, default=9, choices=list(rang
                     help='how compressed the file should be')
 parser.add_argument('-workers', type=int, default=4,
                     help='number of workers to use (reccomended to be core count *2)')
-parser.add_argument('-step', type=str, default="expand", choices=["expand", "merge"],
+parser.add_argument('-step', type=str, nargs="+", default="all",
                     help='step')
 args = parser.parse_args()
 
@@ -45,6 +45,7 @@ def worker(filename, split, id):
     w.close()
 
 if __name__ == '__main__':
+    if args.step == "all": args.step = ["expand", "merge"]
     if args.step == "expand":
         files=[]
         for dir in args.dir:
@@ -61,7 +62,7 @@ if __name__ == '__main__':
         with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
             ret=list(tqdm(executor.map(worker, eval_files, repeat("eval"), range(0, len(eval_files))), total=len(eval_files), desc="Writing val..."))
     
-    if args.step in ["expand", "merge"]:
+    if args.step == "merge":
         if args.compression_level != 0: 
             t=gzip.open(f"{args.out}-train.txt.gz", "wb", compresslevel=args.compression_level)
             v=gzip.open(f"{args.out}-val.txt.gz", "wb", compresslevel=args.compression_level)

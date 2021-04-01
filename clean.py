@@ -21,7 +21,7 @@ parser.add_argument('-out', type=str, default="output",
 parser.add_argument('-workers', type=int, default=None,
                     help='the folder to output txts')
 parser.add_argument('-step', type=str, nargs="+", default="all",
-                        help='the step to start cleaning from')
+                    help='the step to start cleaning from')
 parser.add_argument("-detox", type=str2bool, nargs='?', const=True, default=False, 
                     help="use detoxify to remove toxic messages")
 parser.add_argument("-antispam", type=str2bool, nargs='?', const=True, default=False, 

@@ -4,7 +4,9 @@ context*
 *.pyc
 *.tar.gz
 *.temp
-*.txt
+!commonquestions.txt
+!commonconvos.txt
+*.txt*
 *.json
 !stats*.json
 !Test*.json

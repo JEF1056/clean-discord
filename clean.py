@@ -1,12 +1,11 @@
 import os
 import re
-import json
 import argparse
 from tqdm import tqdm
 import concurrent.futures
 from itertools import repeat
 from src.validate import check_files
-from src.workers import worker_regex, worker_detox, write_stats
+from src.workers import worker_regex, worker_detox, worker_antispam, write_stats
 
 def str2bool(v):
     if isinstance(v, bool): return v
@@ -21,11 +20,15 @@ parser.add_argument('-out', type=str, default="output",
                     help='the folder to output txts')
 parser.add_argument('-workers', type=int, default=None,
                     help='the folder to output txts')
-parser.add_argument('-step', type=str, default="all",
+parser.add_argument('-step', type=str, nargs="+", default="all",
                     help='the step to start cleaning from')
 parser.add_argument("-detox", type=str2bool, nargs='?', const=True, default=False, 
                     help="use detoxify to remove toxic messages")
+parser.add_argument("-antispam", type=str2bool, nargs='?', const=True, default=False, 
+                    help="use detoxify to remove toxic messages")
 parser.add_argument("-pairs", type=str2bool, nargs='?', const=True, default=False, 
+                    help="extract pairs from discord's replies system")
+parser.add_argument("-skip-validation", type=str2bool, nargs='?', const=True, default=False, 
                     help="extract pairs from discord's replies system")
 parser.add_argument("-overwrite", type=str2bool, nargs='?', const=True, default=False, 
                     help="overwrite existing files")
@@ -55,21 +58,28 @@ def run_detox(to_clean):
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
         ret=list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean), repeat(to_clean+"-detox")), total=len(tasks), desc="Detoxifying..."))
     if ret != []: write_stats(ret, to_clean+"-detox")
+    
+def run_antispam(to_clean):
+    #precompute tasks and create required dir
+    try:os.mkdir(to_clean+"-antispam")
+    except: pass
+    print("(antispam): ", end="")
+    all_to_clean=[f for f in os.listdir(to_clean) if f.endswith(".txt")]
+    if args.overwrite: tasks=to_clean; print(f"Overwriting data in {to_clean}")
+    else: tasks=[m for m in all_to_clean if m not in os.listdir(to_clean+"-antispam")]; print(f"Found {len(all_to_clean)-len(tasks)} files in {to_clean}, skipping." if len(all_to_clean)-len(tasks) != 0 else f"Writing data to {to_clean}-antispam")
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
+        ret=list(tqdm(executor.map(worker_antispam, tasks, repeat(to_clean), repeat(to_clean+"-antispam")), total=len(tasks), desc="Removing spam..."))
+    if ret != []: write_stats(ret, to_clean+"-antispam")
         
 if __name__ == '__main__':
-    check_files(args.dir)
-    if args.step == "all":
-        steps=["regex", "pairs", "detox"]
-    else:
-        try:
-            steps=json.loads(args.step)
-            assert type(steps)==list
-        except: raise Exception("Unable to load steps json.")
-    for step in steps:
+    if not args.skip_validation: check_files(args.dir)
+    if args.step == "all": args.step = ["regex", "detox", "antispam"]
+    for step in args.step:
         if step == "regex":
             run_regex()
-        elif step == "pairs":
-            if args.pairs:  pass #not implemented
         elif step == "detox":
             if args.detox: run_detox(args.out)
+        elif step == "antispam":
+            if args.antispam: run_antispam(args.out+"-detox")
     print("DONE")

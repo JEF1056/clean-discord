@@ -39,35 +39,24 @@ def convemojis(i):
 
 #precompile regex
 r1=re.compile(r'@Deleted User')
-r2=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[a-z0-9]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(?:\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|[^a-z0-9.,:;\'\”@!?\s\/'+''.join(emojis)+chr(0)+r']+|(?<=[a-z.,\':;!?\/]) +(?=[.,\':;!?\/])|([a-z.])\1{3,}|([,\':;!?\s\/])\2+', flags=re.DOTALL | re.IGNORECASE)
+r2=re.compile(r'^> (?:.*)+$|https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[^\n\s]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(?:\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|[^a-z0-9.,:;\'\”@!?\s\/'+''.join(emojis)+r']+|(?<=[a-z.,\':;!?\/]) +(?=[.,\'!?\/])|([a-z.])\1{3,}|([,\':;!?\s\/])\2+', flags=re.DOTALL | re.IGNORECASE)
 r3=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U00001680\U000000A0\t]+| {2,}')
 r4=re.compile(r"(.{3,})\1", re.IGNORECASE | re.DOTALL)
 
 def clean(text, author=False):
-    if text.lower() == "welcome" or text.lower().startswith("welcome"): return None #welcome is the bane of exisitence and needs to be culled
+    if text.lower() == "welc" or ("welc" in text): return None #welcome is the bane of exisitence and needs to be culled
     if "@everyone" in text.lower() or "@here" in text.lower(): return None #no need for these kinds of pings, and messages in them are even more useless.
-    if text.lower().startswith(bot_prefixes): return None #handle bot commands
-    if author:
-        if text.startswith("Deleted User"): text=gen_name(author)+text[len("Deleted User"):]
-        elif text.startswith(chr(0)): text=gen_name(author)+text
+    if text[text.find(': ')+2:].lower().startswith(bot_prefixes): return None #handle bot commands
+    if author and text.startswith("Deleted User"): text=gen_name(author)+text[len("Deleted User"):]
     
     text=text.translate(normal_map)#handle special chars from other langs
-    text= re.sub(r1, gen_name, text) #replace "deleted users" with names
+    text= re.sub(r1, gen_name, text.strip()) #replace "deleted users" with names
     text= re.sub(r2, r"\1\1\1\2", text.strip()) #remove urls, emails, code blocks, custom emojis, non-emoji, punctuation, letters, and phone numbers
-    text= re.sub(r3, " ", text) #handle... interesting spaces
-    text= "".join(list(map(convemojis,text))) #translate emojis to their `:text:` shorthand form
+    text= re.sub(r3, " ", text.strip()) #handle... interesting spaces
+    text= "".join(list(map(convemojis,text.strip()))) #translate emojis to their `:text:` shorthand form
     text= "\\n".join([ln.strip().strip("\t") for ln in text.split("\n")]) #handle newlines
-         
-    if text != chr(0) and author:
-        text=text.split(chr(0))
-        if not text[0] in ["", "\\n", "\n", " ", "\t"] and not text[1] in ["", "\\n", "\n", " ", "\t"]:
-            return text
-        else:
-            return None
-    elif not author:
-        if not text in ["", "\\n", "\n", " ", "\t"]:
-            return text
-        else:
-            return None
-    else:
-        return None
+    if text.startswith(": "): text=gen_name(author)+text
+
+    if not (text[text.find(':')+1:].strip() in ["", "\\n", "\n", " ", "\t"] or text[text.find(':')+1:].strip().lower().startswith(bot_prefixes)): 
+        return text.strip()
+    else: return None

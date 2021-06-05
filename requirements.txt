@@ -1,3 +1,4 @@
+atpbar
 tqdm
 pyinstrument
 ijson

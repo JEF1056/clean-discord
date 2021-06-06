@@ -3,6 +3,7 @@ tt.py
 context*
 *.pyc
 *.tar.gz
+*.temp.gz
 *.temp
 !commonquestions.txt
 !commonconvos.txt

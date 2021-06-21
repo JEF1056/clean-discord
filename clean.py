@@ -4,7 +4,7 @@ import argparse
 from tqdm import tqdm
 import concurrent.futures
 from itertools import repeat
-from src.validate import check_files
+from src.validatefiles import check_files
 from src.workers import worker_regex, worker_detox, worker_antispam, write_stats
 
 def str2bool(v):

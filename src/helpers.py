@@ -44,7 +44,7 @@ r3=re.compile(r'[\U00003000\U0000205F\U0000202F\U0000200A\U00002000-\U00002009\U
 r4=re.compile(r"(.{3,})\1", re.IGNORECASE | re.DOTALL)
 
 def clean(text, author=False):
-    if text.lower() == "welc" or ("welc" in text): return None #welcome is the bane of exisitence and needs to be culled
+    if text.lower() == "welc" or ("welcome" in text.lower()): return None #welcome is the bane of exisitence and needs to be culled
     if "@everyone" in text.lower() or "@here" in text.lower(): return None #no need for these kinds of pings, and messages in them are even more useless.
     if text[text.find(': ')+2:].strip().lower().startswith(bot_prefixes): return None #handle bot commands
     if author and text.startswith("Deleted User"): text=gen_name(author)+text[len("Deleted User"):]

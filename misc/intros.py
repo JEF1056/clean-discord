@@ -68,6 +68,9 @@ for ret_dict in ret:
             master_output[key].extend(ret_dict[key])
         master_output[key]=list(set(master_output[key]))
         
+for key in [key for key in master_output if len(master_output[key]) > 10]:
+    del(master_output[key])
+        
 print(f"{len(master_output)} people, {sum([len(master_output[key]) for key in master_output])} profiles")
             
 json.dump(master_output, io.open(args.out, "w"))

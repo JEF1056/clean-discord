@@ -46,13 +46,13 @@ def run_regex():
         
 def run_detox(to_clean):
     #precompute tasks and create required dir
-    tasks=os.listdir(to_clean)
+    tasks=[f for f in os.listdir(to_clean) if f.endswith(".json")]
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
         ret=list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean)), total=len(tasks), desc="Detoxifying..."))
     
 def run_antispam(to_clean):
     #precompute tasks and create required dir
-    tasks=os.listdir(to_clean)
+    tasks=[f for f in os.listdir(to_clean) if f.endswith(".json")]
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
         ret=list(tqdm(executor.map(worker_antispam, tasks, repeat(to_clean)), total=len(tasks), desc="Antispam..."))
         

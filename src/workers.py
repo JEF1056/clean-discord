@@ -2,7 +2,6 @@ import re
 import io
 import os
 import json
-import ijson
 import ciso8601
 import numpy as np
 from src.helpers import clean
@@ -73,16 +72,16 @@ def worker_regex(filename, input_folder, output_folder, debug=False):
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
     temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
     json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
-    try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.json"))
     except: pass
-    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     clear()
 
 def worker_detox(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8")), []
+    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.json"), mode="r", encoding="utf-8")), []
     
     for convo in temp["conversations"]:
         convo=np.array(convo)
@@ -93,16 +92,16 @@ def worker_detox(filename, output_folder, debug=False):
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
     temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
     json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
-    try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.json"))
     except: pass
-    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     clear()
             
 def worker_antispam(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8")), []
+    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.json"), mode="r", encoding="utf-8")), []
     
     for convo in temp["conversations"]:
         convo=np.array(convo)
@@ -113,8 +112,8 @@ def worker_antispam(filename, output_folder, debug=False):
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
     temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
     json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
-    try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.json"))
     except: pass
-    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     clear()

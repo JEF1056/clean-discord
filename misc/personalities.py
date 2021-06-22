@@ -3,9 +3,9 @@ from tqdm import tqdm
 import random
 import gzip
 
-examples_pairs=io.open("src/commonquestions.txt", mode="r", encoding="utf-8").read().strip().split("\n")
-examples_convos=io.open("src/commonconvos.txt", mode="r", encoding="utf-8").read().strip().split("\n")
-names=io.open("src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+examples_pairs=io.open("../src/commonquestions.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+examples_convos=io.open("../src/commonconvos.txt", mode="r", encoding="utf-8").read().strip().split("\n")
+names=io.open("../src/names.txt", mode="r", encoding="utf-8").read().strip().split("\n")
 
 max_len=10
 compression_level=0

@@ -89,8 +89,10 @@ def worker_detox(filename, output_folder, debug=False):
     
     for convo in temp["conversations"]:
         convo=np.array(convo)
-        pred_map=predict(np.array([msg[0] for msg in convo]))
-        temp_lst.append(convo[pred_map < 1].tolist())
+        try:
+            pred_map=predict(np.array([msg[0] for msg in convo]))
+            temp_lst.append(convo[pred_map < 1].tolist())
+        except: pass
         
     temp["conversations"]=temp_lst
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))

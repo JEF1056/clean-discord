@@ -46,29 +46,15 @@ def run_regex():
         
 def run_detox(to_clean):
     #precompute tasks and create required dir
-    try:os.mkdir(to_clean+"-detox")
-    except: pass
-    print("(detox): ", end="")
-    all_to_clean=[f for f in os.listdir(to_clean) if f.endswith(".txt")]
-    if args.overwrite: tasks=to_clean; print(f"Overwriting data in {to_clean}")
-    else: tasks=[m for m in all_to_clean if m not in os.listdir(to_clean+"-detox")]; print(f"Found {len(all_to_clean)-len(tasks)} files in {to_clean}, skipping." if len(all_to_clean)-len(tasks) != 0 else f"Writing data to {to_clean}-detox")
-
+    tasks=os.listdir(to_clean)
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean), repeat(to_clean+"-detox")), total=len(tasks), desc="Detoxifying..."))
-    if ret != []: write_stats(ret, to_clean+"-detox")
+        ret=list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean)), total=len(tasks), desc="Detoxifying..."))
     
 def run_antispam(to_clean):
     #precompute tasks and create required dir
-    try:os.mkdir(to_clean+"-antispam")
-    except: pass
-    print("(antispam): ", end="")
-    all_to_clean=[f for f in os.listdir(to_clean) if f.endswith(".txt")]
-    if args.overwrite: tasks=to_clean; print(f"Overwriting data in {to_clean}")
-    else: tasks=[m for m in all_to_clean if m not in os.listdir(to_clean+"-antispam")]; print(f"Found {len(all_to_clean)-len(tasks)} files in {to_clean}, skipping." if len(all_to_clean)-len(tasks) != 0 else f"Writing data to {to_clean}-antispam")
-
+    tasks=os.listdir(to_clean)
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker_antispam, tasks, repeat(to_clean), repeat(to_clean+"-antispam")), total=len(tasks), desc="Removing spam..."))
-    if ret != []: write_stats(ret, to_clean+"-antispam")
+        ret=list(tqdm(executor.map(worker_antispam, tasks, repeat(to_clean)), total=len(tasks), desc="Antispam..."))
         
 if __name__ == '__main__':
     if not args.skip_validation: check_files(args.dir)
@@ -79,5 +65,5 @@ if __name__ == '__main__':
         elif step == "detox":
             if args.detox: run_detox(args.out)
         elif step == "antispam":
-            if args.antispam: run_antispam(args.out+"-detox")
+            if args.antispam: run_antispam(args.out)
     print("DONE")

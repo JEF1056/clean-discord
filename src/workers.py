@@ -76,16 +76,18 @@ def worker_regex(filename, input_folder, output_folder, debug=False):
     try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
     except: pass
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     clear()
 
-def worker_detox(filename, input_folder, output_folder, debug=False):
+def worker_detox(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    temp, temp_lst = json.load(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8"), []
+    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8")), []
     
     for convo in temp["conversations"]:
-        pred_map=predict([msg[0] for msg in convo])
-        temp_lst.append(convo[pred_map < 1])
+        convo=np.array(convo)
+        pred_map=predict(np.array([msg[0] for msg in convo]))
+        temp_lst.append(convo[pred_map < 1].tolist())
         
     temp["conversations"]=temp_lst
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
@@ -94,16 +96,18 @@ def worker_detox(filename, input_folder, output_folder, debug=False):
     try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
     except: pass
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     clear()
             
-def worker_antispam(filename, input_folder, output_folder, debug=False):
+def worker_antispam(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    temp, temp_lst = json.load(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8"), []
+    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8")), []
     
     for convo in temp["conversations"]:
-        pred_map=antispam([msg[0] for msg in convo])
-        temp_lst.append(convo[pred_map < 1])
+        convo=np.array(convo)
+        pred_map=antispam(np.array([msg[0] for msg in convo]))
+        temp_lst.append(convo[pred_map < 1].tolist())
         
     temp["conversations"]=temp_lst
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
@@ -112,4 +116,5 @@ def worker_antispam(filename, input_folder, output_folder, debug=False):
     try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
     except: pass
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     clear()

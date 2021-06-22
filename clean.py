@@ -32,8 +32,6 @@ parser.add_argument("-skip-validation", type=str2bool, nargs='?', const=True, de
                     help="extract pairs from discord's replies system")
 parser.add_argument("-overwrite", type=str2bool, nargs='?', const=True, default=False, 
                     help="overwrite existing files")
-parser.add_argument("-lowmem", type=str2bool, nargs='?', const=True, default=False, 
-                    help="use low-mem clenaing method")
 args = parser.parse_args()
 
 def run_regex():
@@ -44,8 +42,7 @@ def run_regex():
     if args.overwrite: tasks=os.listdir(args.dir); print(f"Overwriting data in {args.out}")
     else: tasks=[m for m in os.listdir(args.dir) if re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", m).group(0)+".txt" not in os.listdir(args.out)]; print(f"Found {len(os.listdir(args.dir))-len(tasks)} files in {args.out}, skipping." if len(os.listdir(args.dir))-len(tasks) != 0 else f"Writing data to {args.out}")
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker_regex, tasks, repeat(args.dir), repeat(args.out), repeat(not args.lowmem)), total=len(tasks), desc="Cleaning..."))
-    if ret != []: write_stats(ret, args.out)
+        ret=list(tqdm(executor.map(worker_regex, tasks, repeat(args.dir), repeat(args.out)), total=len(tasks), desc="Cleaning..."))
         
 def run_detox(to_clean):
     #precompute tasks and create required dir

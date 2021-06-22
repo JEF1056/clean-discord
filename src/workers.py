@@ -12,6 +12,7 @@ from atpbar import atpbar, register_reporter, find_reporter
     
 global reporter
 reporter = find_reporter()
+
 def clear():
     if os.name == 'nt':
         _ = os.system('cls')
@@ -43,91 +44,72 @@ def antispam(conversation):
         else: res.append(1)
     return np.array(res)
 
-def worker_regex(filename, input_folder, output_folder, mem_load=False, debug=False):
+def worker_regex(filename, input_folder, output_folder, debug=False):
     global reporter
+    register_reporter(reporter)
     if debug: profiler = Profiler(); profiler.start()
     
-    if mem_load: messages=json.load(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"))["messages"]
-    else:messages=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item')
-    ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    fst, count=True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
-    if mem_load:
-        register_reporter(reporter)
-        iterable=atpbar(messages, name=ch)
-    else:iterable=messages
+    messages, ch=json.load(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"))["messages"], re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
+    temp= {"channel":ch, "stats": {"original":len(messages), "removed": [], "current":[]}, "conversations":[]}
+    msg, last_seen, last_author, curr_time=[],None,"",0
     
-    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-        msg, last_seen, last_author, curr_time=[],None,"",0
-        for data in iterable:
-            if data['author']['isBot'] == False and data["type"] == "Default" and data["content"] and len(data["content"])<500:
-                cleaned=clean(f'{data["author"]["name"].replace(":","")}: {data["content"]}', author=data["author"]["id"])
-                if cleaned:
-                    if last_author != data["author"]["id"] or len(msg)==0:
-                        msg.append(cleaned)
-                        count["messages"]+=1
-                        curr_time=ciso8601.parse_datetime(data['timestamp'])
-                        if (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
-                            msg="\t".join(msg)
-                            if fst: f.write(msg); fst=False
-                            else: f.write("\n"+msg)
-                            msg=[]; last_author=""; last_seen=None; count["conversations"]+=1
-                        last_author = data["author"]["id"]
-                    else:
-                        msg[len(msg)-1]+=f"\\n{cleaned[cleaned.find(': ')+2:]}"
+    for data in atpbar(messages, name=ch):
+        if data['author']['isBot'] == False and data["type"] == "Default" and data["content"] and len(data["content"])<500:
+            cleaned=clean(f'{data["author"]["name"].replace(":","")}: {data["content"]}', author=data["author"]["id"])
+            if cleaned:
+                if last_author != data["author"]["id"] or len(msg)==0:
+                    msg.append([cleaned, data["author"]["id"]])
+                    curr_time=ciso8601.parse_datetime(data['timestamp'])
+                    if (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
+                        #msg="\t".join(msg)
+                        temp["conversations"].append(msg)
+                        msg=[]; last_author=""; last_seen=None
+                    last_author = data["author"]["id"]
                 else:
-                    count["removed_messages"]+=1
-            else:
-                count["removed_messages"]+=1
-            last_seen = curr_time
-        if msg!=[]:
-            msg="\t".join(msg)
-            if fst: f.write(msg); fst=False
-            else: f.write("\n"+msg)
+                    msg[-1][0]+=f"\\n{cleaned[cleaned.find(': ')+2:]}"
+        last_seen = curr_time
+    if msg!=[]: temp["conversations"].append(msg); msg=[]
+    
+    temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
+    temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
+    json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
+    except: pass
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
-    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-    if mem_load and not debug:clear()
-    return count
+    clear()
 
 def worker_detox(filename, input_folder, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-        while True:
-            line = file_data.readline().strip()
-            if not line:
-                os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
-                if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-                return count
-            count["conversations"]+=1
-            line=np.array(line.split("\t"))
-            pred_map=predict(line)
-            count["removed_messages"] += np.count_nonzero(pred_map == 1)
-            count["messages"] += np.count_nonzero(pred_map == 0)
-            line=line[pred_map < 1]
-            if len(line) > 1:
-                if fst: f.write("\t".join(line)); fst=False
-                else: f.write("\n"+"\t".join(line))
-            else: count["removed_messages"] +=1
+    temp, temp_lst = json.load(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8"), []
+    
+    for convo in temp["conversations"]:
+        pred_map=predict([msg[0] for msg in convo])
+        temp_lst.append(convo[pred_map < 1])
+        
+    temp["conversations"]=temp_lst
+    temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
+    temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
+    json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
+    except: pass
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    clear()
             
 def worker_antispam(filename, input_folder, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-        while True:
-            line = file_data.readline().strip()
-            if not line:
-                os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
-                if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-                return count
-            count["conversations"]+=1
-            line=np.array(line.split("\t"))
-            pred_map=antispam(line)
-            count["removed_messages"] += np.count_nonzero(pred_map == 1)
-            count["messages"] += np.count_nonzero(pred_map == 0)
-            line=line[pred_map < 1]
-            if len(line) > 1:
-                if fst: f.write("\t".join(line)); fst=False
-                else: f.write("\n"+"\t".join(line))
-            else: count["removed_messages"] +=1 
+    temp, temp_lst = json.load(os.path.join(output_folder,f"{ch}.txt"), mode="r", encoding="utf-8"), []
+    
+    for convo in temp["conversations"]:
+        pred_map=antispam([msg[0] for msg in convo])
+        temp_lst.append(convo[pred_map < 1])
+        
+    temp["conversations"]=temp_lst
+    temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
+    temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
+    json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.txt"))
+    except: pass
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
+    clear()

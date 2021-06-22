@@ -96,7 +96,6 @@ def worker_detox(filename, output_folder, debug=False):
     except: pass
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-    clear()
             
 def worker_antispam(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
@@ -116,4 +115,3 @@ def worker_antispam(filename, output_folder, debug=False):
     except: pass
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-    clear()

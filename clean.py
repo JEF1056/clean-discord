@@ -28,6 +28,8 @@ parser.add_argument("-skip-validation", type=str2bool, nargs='?', const=True, de
                     help="extract pairs from discord's replies system")
 parser.add_argument("-overwrite", type=str2bool, nargs='?', const=True, default=False, 
                     help="overwrite existing files")
+parser.add_argument("-adv_prog", type=str2bool, nargs='?', const=True, default=False, 
+                    help="use advanced progress bars")
 args = parser.parse_args()
 
 def run_regex():
@@ -38,19 +40,19 @@ def run_regex():
     if args.overwrite: tasks=os.listdir(args.dir); print(f"Overwriting data in {args.out}")
     else: tasks=[m for m in os.listdir(args.dir) if re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", m).group(0)+".txt" not in os.listdir(args.out)]; print(f"Found {len(os.listdir(args.dir))-len(tasks)} files in {args.out}, skipping." if len(os.listdir(args.dir))-len(tasks) != 0 else f"Writing data to {args.out}")
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        list(tqdm(executor.map(worker_regex, tasks, repeat(args.dir), repeat(args.out)), total=len(tasks), desc="Cleaning..."))
+        tqdm(executor.map(worker_regex, tasks, repeat(args.dir), repeat(args.out), repeat(args.adv_prog)), total=len(tasks), desc="Cleaning...")
         
 def run_detox(to_clean):
     #precompute tasks and create required dir
     tasks=[f for f in os.listdir(to_clean) if f.endswith(".json")]
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean)), total=len(tasks), desc="Detoxifying..."))
+        tqdm(executor.map(worker_detox, tasks, repeat(to_clean)), total=len(tasks), desc="Detoxifying...")
     
 def run_antispam(to_clean):
     #precompute tasks and create required dir
     tasks=[f for f in os.listdir(to_clean) if f.endswith(".json")]
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        list(tqdm(executor.map(worker_antispam, tasks, repeat(to_clean)), total=len(tasks), desc="Antispam..."))
+        tqdm(executor.map(worker_antispam, tasks, repeat(to_clean)), total=len(tasks), desc="Antispam...")
         
 if __name__ == '__main__':
     if not args.skip_validation: check_files(args.dir)

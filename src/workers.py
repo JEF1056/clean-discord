@@ -43,16 +43,20 @@ def antispam(conversation):
         else: res.append(1)
     return np.array(res)
 
-def worker_regex(filename, input_folder, output_folder, debug=False):
-    global reporter
-    register_reporter(reporter)
+def worker_regex(filename, input_folder, output_folder, adv_prog=False, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     
     messages, ch=json.load(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"))["messages"], re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
     temp= {"channel":ch, "stats": {"original":len(messages), "removed": [], "current":[]}, "conversations":[]}
     msg, last_seen, last_author, curr_time=[],None,"",0
     
-    for data in atpbar(messages, name=ch):
+    if adv_prog:
+        global reporter
+        register_reporter(reporter)
+        iterator=atpbar(messages, name=ch)
+    else: iterator=messages
+    
+    for data in iterator:
         if data['author']['isBot'] == False and data["type"] == "Default" and data["content"] and len(data["content"])<500:
             cleaned=clean(f'{data["author"]["name"].replace(":","")}: {data["content"]}', author=data["author"]["id"])
             if cleaned:
@@ -76,7 +80,7 @@ def worker_regex(filename, input_folder, output_folder, debug=False):
     except: pass
     os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-    clear()
+    if adv_prog: clear()
 
 def worker_detox(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()

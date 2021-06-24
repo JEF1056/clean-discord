@@ -15,7 +15,7 @@ parser.add_argument('-dir', nargs="+", default=["data"],
                     help='the data folder containing the processed files on the top level')
 parser.add_argument('-out', type=str, default="context",
                     help='prefix the compressed output file sets')
-parser.add_argument('-max_length', type=int, default=10,
+parser.add_argument('-max_length', type=int, default=8,
                     help='maximum number of turns that the inputs amy have')
 parser.add_argument('-compression_level', type=int, default=9, choices=list(range(0,10)),
                     help='how compressed the file should be')
@@ -51,7 +51,7 @@ def worker(filename, split, debug=False):
         if len(conversation) >= 2:
             for y in range(1,len(conversation)):
                 x=y-args.max_length if y-args.max_length >= 0 else 0
-                out=f"persona: {random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None'} context: {'/b'.join([msg[0] for msg in conversation[x:y]])}\t{': '.join(conversation[y][0].split(': ')[1:])}".strip().replace("\\n", "/n")
+                out=f"persona: {(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('	',' ')} context: {('/b'.join([msg[0] for msg in conversation[x:y]])).replace('	',' ')}\t{(': '.join(conversation[y][0].split(': ')[1:])).replace('	',' ')}".strip().replace("\\n", "/n")
                 temp.append(out)
     writefile(temp, spl)
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))

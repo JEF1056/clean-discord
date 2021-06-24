@@ -71,7 +71,7 @@ def worker_regex(filename, input_folder, output_folder, adv_prog=False, debug=Fa
                 else:
                     msg[-1][0]+=f"\\n{cleaned[cleaned.find(': ')+2:]}"
         last_seen = curr_time
-    if msg!=[]: temp["conversations"].append(msg.strip().replace("\t", " ")); msg=[]
+    if msg!=[]: temp["conversations"].append(msg); msg=[]
     
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
     temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])

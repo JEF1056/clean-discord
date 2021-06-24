@@ -58,5 +58,5 @@ def clean(text, author=False):
     if text.startswith(": "): text=gen_name(author)+text
 
     if not (text[text.find(':')+1:].strip() in ["", "\\n", "\n", " ", "\t"] or text[text.find(':')+1:].strip().lower().startswith(bot_prefixes)): 
-        return text.lstrip(("!.,^#")).strip()
+        return text.lstrip(("!.,^#")).strip().replace("\t", " ")
     else: return None

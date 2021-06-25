@@ -30,7 +30,7 @@ if args.personality: personalities=json.load(io.open(args.personality, "r", enco
 
 def writefile(data, pref, split, num):
     fst=False
-    with gzip.open(os.path.join("args.out", f"{pref}-{split}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
+    with gzip.open(os.path.join(args.out, f"{pref}-{split}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
         for line in data:
             if fst:
                 f.write(f"{line}\n".encode("utf-8"))

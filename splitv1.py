@@ -28,9 +28,9 @@ try:os.mkdir("temp")
 except: pass
 if args.personality: personalities=json.load(io.open(args.personality, "r", encoding="utf-8"))
 
-def writefile(data, split, num):
+def writefile(data, pref, split, num):
     fst=False
-    with gzip.open(f"{args.out}-{split}-{num}.txt.gz", "w", compresslevel=args.compression_level) as f:
+    with gzip.open(os.path.join("args.out", f"{pref}-{split}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
         for line in data:
             if fst:
                 f.write(f"{line}\n".encode("utf-8"))
@@ -39,17 +39,17 @@ def writefile(data, split, num):
 
 def worker(filename, split, num, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    temp, data, spl=[], json.load(io.open(filename, "r", encoding="utf-8")), split
+    temp, data=[], json.load(io.open(filename, "r", encoding="utf-8")), split
     for conversation in data["conversations"]:
-        spl=split
         per=not set([pair[1] for pair in conversation]).isdisjoint(list(personalities))
-        if per: spl="ps-"+spl
+        if per: pref="persona"
+        else: pref="context"
         if len(conversation) >= 2:
             for y in range(1,len(conversation)):
                 x=y-args.max_length if y-args.max_length >= 0 else 0
                 out=(f"persona: {(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('	',' ')} context: {('/b'.join([msg[0] for msg in conversation[x:y]])).replace('	',' ')}\t{(': '.join(conversation[y][0].split(': ')[1:])).replace('	',' ')}").strip().replace("\\n", "/n").replace("\n","")
                 temp.append(out)
-    writefile(temp, spl, num)
+    writefile(temp, pref, split, num)
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     return 0
     

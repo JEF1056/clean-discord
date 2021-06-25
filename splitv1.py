@@ -2,7 +2,6 @@ import os
 import io
 import json
 import gzip
-import ijson
 import random
 import argparse
 import multiprocessing
@@ -39,15 +38,15 @@ def writefile(data, split):
         for line in data:
             if fst[split]: 
                 lck.acquire()
-                f.write(line.encode("utf-8"))
+                f.write(f"{line}\n".encode("utf-8"))
                 fst[split]=False
                 lck.release()
             else: f.write(f"\n{line}".encode("utf-8"))
 
 def worker(filename, split, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    temp, data, spl=[], ijson.items(io.open(filename, "r"), 'conversations.item'), split
-    for conversation in data:
+    temp, data, spl=[], json.load(io.open(filename, "r", encoding="utf-8")), split
+    for conversation in data["conversations"]:
         spl=split
         per=not set([pair[1] for pair in conversation]).isdisjoint(list(personalities))
         if per: spl="personality-"+spl

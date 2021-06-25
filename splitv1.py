@@ -35,14 +35,14 @@ if args.personality:
     fst.update({"personality-train": True, "personality-val":True})
 
 def writefile(data, split):
-    lck.acquire()
     with gzip.open(f"{args.out}-{split}.txt.gz", "ab+", compresslevel=args.compression_level) as f:
         for line in data:
             if fst[split]: 
+                lck.acquire()
                 f.write(line.encode("utf-8"))
                 fst[split]=False
+                lck.release()
             else: f.write(f"\n{line}".encode("utf-8"))
-    lck.release()
 
 def worker(filename, split, debug=False):
     if debug: profiler = Profiler(); profiler.start()

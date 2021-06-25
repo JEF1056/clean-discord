@@ -1,6 +1,6 @@
 import os
 import io
-import json
+import ijson
 import gzip
 import random
 import argparse
@@ -45,8 +45,8 @@ def writefile(data, split):
 
 def worker(filename, split, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    temp, data, spl=[], json.load(io.open(filename, mode="r", encoding="utf-8")), split
-    for conversation in data["conversations"]:
+    temp, data, spl=[], ijson.items(io.open(filename, "r"), 'conversations.item'), split
+    for conversation in data:
         spl=split
         per=not set([pair[1] for pair in conversation]).isdisjoint(list(personalities))
         if per: spl="personality-"+spl

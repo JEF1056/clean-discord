@@ -32,9 +32,9 @@ def writefile(data, split, num):
     fst=False
     with gzip.open(f"{args.out}-{split}-{num}.txt.gz", "w", compresslevel=args.compression_level) as f:
         for line in data:
-            if fst[split]:
+            if fst:
                 f.write(f"{line}\n".encode("utf-8"))
-                fst[split]=False
+                fst=False
             else: f.write(f"\n{line}".encode("utf-8"))
 
 def worker(filename, split, num, debug=False):

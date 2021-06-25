@@ -39,7 +39,7 @@ def writefile(data, pref, split, num):
 
 def worker(filename, split, num, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    temp, data=[], json.load(io.open(filename, "r", encoding="utf-8")), split
+    temp, data=[], json.load(io.open(filename, "r", encoding="utf-8"))
     for conversation in data["conversations"]:
         per=not set([pair[1] for pair in conversation]).isdisjoint(list(personalities))
         if per: pref="persona"

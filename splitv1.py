@@ -37,7 +37,9 @@ def writefile(data, split):
     lck.acquire()
     with gzip.open(f"{args.out}-{split}.txt.gz", "ab+", compresslevel=args.compression_level) as f:
         for line in data:
-            if fst[split]: f.write(line.encode("utf-8")); fst[split]=False
+            if fst[split]: 
+                f.write(line.encode("utf-8"))
+                fst[split]=False
             else: f.write(f"\n{line}".encode("utf-8"))
     lck.release()
 
@@ -51,7 +53,7 @@ def worker(filename, split, debug=False):
         if len(conversation) >= 2:
             for y in range(1,len(conversation)):
                 x=y-args.max_length if y-args.max_length >= 0 else 0
-                out=f"persona: {(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('	',' ')} context: {('/b'.join([msg[0] for msg in conversation[x:y]])).replace('	',' ')}\t{(': '.join(conversation[y][0].split(': ')[1:])).replace('	',' ')}".strip().replace("\\n", "/n")
+                out=(f"persona: {(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('	',' ')} context: {('/b'.join([msg[0] for msg in conversation[x:y]])).replace('	',' ')}\t{(': '.join(conversation[y][0].split(': ')[1:])).replace('	',' ')}").strip().replace("\\n", "/n").replace("\n","")
                 temp.append(out)
     writefile(temp, spl)
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))

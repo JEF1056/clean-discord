@@ -2,13 +2,21 @@ import re
 import io
 import os
 import json
-import ijson
-import random
 import ciso8601
 import numpy as np
+from src.helpers import clean
 from pyinstrument import Profiler
 from profanity_check import predict
-from src.helpers import clean
+from atpbar import atpbar, register_reporter, find_reporter
+    
+global reporter
+reporter = find_reporter()
+
+def clear():
+    if os.name == 'nt':
+        _ = os.system('cls')
+    else:
+        _ = os.system('clear')
     
 def write_stats(ret, dir):
     messages_total, conversations_total, removed_total, new_ret=0,0,0, {}
@@ -35,141 +43,81 @@ def antispam(conversation):
         else: res.append(1)
     return np.array(res)
 
-def worker_regex(filename, input_folder, output_folder, max_context=1000, debug=False):
+def worker_regex(filename, input_folder, output_folder, adv_prog=False, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    messages, fst, count=ijson.items(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), 'messages.item'), True,{"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
-    ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-        msg, last_seen, last_author, curr_time=[],None,"",0
-        for data in messages:
-            if data['author']['isBot'] == False and data["type"] == "Default" and data["content"]:
-                cl=clean(data["author"]["name"]+chr(0)+data["content"], author=data["author"]["id"])
-                if cl and len(cl) == 2:
-                    author, content = cl
-                    if last_author != author or len(msg)==0:
-                        msg.append(f'{author}: {content}')
-                        count["messages"]+=1
-                        curr_time=ciso8601.parse_datetime(data['timestamp'])
-                        if len(msg)==max_context or (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
-                            msg="\t".join(msg)
-                            if fst: f.write(msg); fst=False
-                            else: f.write("\n"+msg)
-                            msg=[]; last_author=""; last_seen=None; count["conversations"]+=1
-                        last_author = author
-                    else:
-                        msg[len(msg)-1]+=f"\\n{content}"
+    
+    messages, ch=json.load(io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"))["messages"], re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
+    temp= {"channel":ch, "stats": {"original":len(messages), "removed": [], "current":[]}, "conversations":[]}
+    msg, last_seen, last_author, curr_time=[],None,"",0
+    
+    if adv_prog:
+        global reporter
+        register_reporter(reporter)
+        iterator=atpbar(messages, name=ch)
+    else: iterator=messages
+    
+    for data in iterator:
+        if data['author']['isBot'] == False and data["type"] == "Default" and data["content"] and len(data["content"])<500:
+            cleaned=clean(f'{data["author"]["name"].replace(":","")}: {data["content"]}', author=data["author"]["id"])
+            if cleaned:
+                if last_author != data["author"]["id"] or len(msg)==0:
+                    msg.append([cleaned, data["author"]["id"]])
+                    curr_time=ciso8601.parse_datetime(data['timestamp'])
+                    if (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
+                        #msg="\t".join(msg)
+                        temp["conversations"].append(msg)
+                        msg=[]; last_author=""; last_seen=None
+                    last_author = data["author"]["id"]
                 else:
-                    count["removed_messages"]+=1
-            else:
-                count["removed_messages"]+=1
-            last_seen = curr_time
-    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
-    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))#profiler.open_in_browser()
-    return count
+                    msg[-1][0]+=f"\\n{cleaned[cleaned.find(': ')+2:]}"
+        last_seen = curr_time
+    if msg!=[]: temp["conversations"].append(msg.strip().replace("\t", " ")); msg=[]
+    
+    temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
+    temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
+    json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.json"))
+    except: pass
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
+    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
+    if adv_prog: clear()
 
-def worker_detox(filename, input_folder, output_folder, debug=False):
+def worker_detox(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-        while True:
-            line = file_data.readline().strip()
-            if not line:
-                os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
-                if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-                return count
-            count["conversations"]+=1
-            line=np.array(line.split("\t"))
-            pred_map=predict(line)
-            count["removed_messages"] += np.count_nonzero(pred_map == 1)
-            count["messages"] += np.count_nonzero(pred_map == 0)
-            line=line[pred_map < 1]
-            if len(line) > 1:
-                if fst: f.write("\t".join(line)); fst=False
-                else: f.write("\n"+"\t".join(line))
-            else: count["removed_messages"] +=1
+    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.json"), mode="r", encoding="utf-8")), []
+    
+    for convo in temp["conversations"]:
+        convo=np.array(convo)
+        try:
+            pred_map=predict(np.array([msg[0] for msg in convo]))
+            temp_lst.append(convo[pred_map < 1].tolist())
+        except: pass
+        
+    temp["conversations"]=temp_lst
+    temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
+    temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
+    json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.json"))
+    except: pass
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
+    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
             
-def worker_antispam(filename, input_folder, output_folder, debug=False):
+def worker_antispam(filename, output_folder, debug=False):
     if debug: profiler = Profiler(); profiler.start()
-    file_data, fst, count=io.open(os.path.join(input_folder,filename), mode="r", encoding="utf-8"), True, {"channel": re.search(r"\[\d{18}\]", filename).group(0),"conversations":0,"messages":0,"removed_messages":0}
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
-    with io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8") as f:
-        while True:
-            line = file_data.readline().strip()
-            if not line:
-                os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.txt"))
-                if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
-                return count
-            count["conversations"]+=1
-            line=np.array(line.split("\t"))
-            pred_map=antispam(line)
-            count["removed_messages"] += np.count_nonzero(pred_map == 1)
-            count["messages"] += np.count_nonzero(pred_map == 0)
-            line=line[pred_map < 1]
-            if len(line) > 1:
-                if fst: f.write("\t".join(line)); fst=False
-                else: f.write("\n"+"\t".join(line))
-            else: count["removed_messages"] +=1 
-            
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser(description='Clean Discord data')
-    parser.add_argument('-dir', type=str, default="data",
-                        help='the fonlder that contains the data file')
-    parser.add_argument('-out', type=str, default="output",
-                        help='the folder to output txts')
-    parser.add_argument('-step', type=str, nargs="+", default="all",
-                        help='the step to start cleaning from')
-    args = parser.parse_args()
+    temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.json"), mode="r", encoding="utf-8")), []
     
-    worstcase_clean="""
-Hi, this is a test.
-```
-This is some code:
-if args.step == "all":
-    steps=["regex", "pairs", "detox"]
-else:
-    try:
-        steps=json.loads(args.step)
-        assert type(steps)==list
-    except: raise Exception("Unable to load steps json.")
-```
-`this too, but it's only one line`
-heh maybe if i put it on one line ```e``` or does `this` work
-REEE WHY IS IS BEING CLEANED OOOOF HOWWWWWWWW
-I AM THE KING ♕ ✦ —• YOU CANNOT STOP ME
-what about this 𝐈𝐌𝐀𝐆𝐄, it should be IMAGE.
-hahahahaha i bet you can't beat my cool asian language 毛泽东万岁
-WHAAAAAAAAAAAAAAAAAAAAAAT noooooooooooooooooooooooo it can't be..................
-hahaha but my best invention yet, my friend @Deleted User and @Deleted User. They will surely defeat you.
-                     plenty              of                      spaces               ???????????????       🥲
-fine. one last resort. my email is contact@j-fan.ml and you can join my server at https://jadeai.ml/server. Join or else.
-if those didn't work maybe my phone numbers, +2 (666) 768-1111 or 408 220 0343 will work. meet me at 12:00 :3
-✧・ﾟ:*ａｎｇｅｌａ*:･ﾟ☆✧ ::::::: I am the best
-    """
-    print("Running a clean test case ~~~~~~~~")
-    print(f"{worstcase_clean}\nRaw ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-    print(clean(worstcase_clean).replace("\\n","\n"))
-    print("Clean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-    
-    if args.step == "all": args.step = ["regex", "detox", "antispam"]
-    for step in args.step:
-        if step == "regex":
-            try:os.mkdir(args.out)
-            except: pass
-            print("\033[1mRunning regex test\033[0m")
-            ret=[worker_regex(os.listdir(args.dir)[0], args.dir, args.out, debug=True)]
-            write_stats(ret, args.out)
-        elif step == "detox":
-            try:os.mkdir(args.out+"-detox")
-            except: pass
-            print(f"\033[1mRunning detox test\033[0m")
-            ret=[worker_detox([f for f in os.listdir(args.out) if f.endswith(".txt")][0], args.out, args.out+"-detox", debug=True)]
-            write_stats(ret, args.out+"-detox")
-        elif step == "antispam":
-            try:os.mkdir(args.out+"-antispam")
-            except: pass
-            print("\033[1mRunning antispam test\033[0m")
-            ret=[worker_antispam([f for f in os.listdir(args.out+"-detox") if f.endswith(".txt")][0], args.out+"-detox", args.out+"-antispam", debug=True)]
-            write_stats(ret, args.out+"-antispam")
-    print("DONE")
+    for convo in temp["conversations"]:
+        convo=np.array(convo)
+        pred_map=antispam(np.array([msg[0] for msg in convo]))
+        temp_lst.append(convo[pred_map < 1].tolist())
+        
+    temp["conversations"]=temp_lst
+    temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
+    temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
+    json.dump(temp, io.open(os.path.join(output_folder,f"{ch}.temp"), mode="w", encoding="utf-8"))
+    try: os.remove(os.path.join(output_folder,f"{ch}.json"))
+    except: pass
+    os.rename(os.path.join(output_folder,f"{ch}.temp"),os.path.join(output_folder,f"{ch}.json"))
+    if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))

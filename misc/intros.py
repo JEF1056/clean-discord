@@ -83,24 +83,25 @@ def worker(file):
     data=json.load(io.open(os.path.join(args.dir, file), "r"))["messages"]
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", file).group(0)
     register_reporter(reporter)
-    for row in atpbar(data, name=ch):
-        if row['author']['isBot'] == False and row["type"] == "Default" and row["content"] and len(row["content"]) >= 80:
-            cleaned=clean(row["content"])
-            if cleaned:
-                cleaned=cleaned.replace("\t"," ")
-                if str(row["author"]["id"]) not in temp:
-                    temp[str(row["author"]["id"])]=[cleaned]
-                else:
-                    temp[str(row["author"]["id"])].append(cleaned)
-                with io.open(os.path.join(args.out,ch+".txt"), "w") as f:
-                    extracted={e[0].lower():e[1] for e in [[v.strip() for v in i.split(":")] for i in re.findall(r10, cleaned)]}
+    with gzip.open(os.path.join(args.out,ch+".txt.gz"), mode='wb', compresslevel=9) as f:
+        for row in atpbar(data, name=ch):
+            if row['author']['isBot'] == False and row["type"] == "Default" and row["content"] and len(row["content"]) >= 80:
+                cleaned=clean(row["content"])
+                if cleaned:
+                    cleaned=cleaned.replace("\t"," ")
+                    if str(row["author"]["id"]) not in temp:
+                        temp[str(row["author"]["id"])]=[cleaned]
+                    else:
+                        temp[str(row["author"]["id"])].append(cleaned)
+                    
+                    extracted={e[0].lower():e[1] for e in [[v.strip() for v in i.split(":")] for i in re.findall(r10, cleaned.replace("\\n", "\n"))]}
                     if extracted == None: return []
                     output=[]
                     output.extend(gen_permuatations(row['author']['name'], extracted))
                     if "name" in extracted: output.extend(gen_permuatations(extracted["name"], extracted))
                     for line in [f"{inp}\t{cleaned}".replace("\n","\\n") for inp in output]:
-                        if fst: f.write(line); fst=False
-                        else: f.write(f"\n{line}")
+                        if fst: f.write(line.encode("utf-8")); fst=False
+                        else: f.write(f"\n{line}".encode("utf-8"))
     return temp
 
 tasks=os.listdir(args.dir) 

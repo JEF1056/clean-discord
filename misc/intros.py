@@ -99,7 +99,7 @@ def worker(file):
                     output=[]
                     output.extend(gen_permuatations(row['author']['name'], extracted))
                     if "name" in extracted: output.extend(gen_permuatations(clean(extracted["name"]), extracted))
-                    for line in [f"{inp}\t{cleaned}".replace("\n","/n") for inp in output]:
+                    for line in [f"{inp}\t{cleaned}".replace("\\n","/n") for inp in output]:
                         if fst: f.write(line.encode("utf-8")); fst=False
                         else: f.write(f"\n{line}".encode("utf-8"))
     return temp

@@ -46,7 +46,7 @@ def get_perms(conversation):
             psn=(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('\t',' ')
             ctx=('/b'.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ')
             rsp=(': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ')
-            temp.append(f"persona: {psn} context: {ctx}\t{rsp}").strip().replace("\\n", "/n").replace("\n","/n")
+            temp.append(f"persona: {psn} context: {ctx}\t{rsp}".strip().replace("\\n", "/n").replace("\n","/n"))
     return temp
     
 def worker(filename, split, num, debug=False):

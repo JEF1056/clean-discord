@@ -25,19 +25,17 @@ personas=[
 
 max_len=10
 compression_level=9
-output_file="../personality/persona"
+output_file="../../cleaned/persona/persona"
 partitions= 1000
 
 def gen_all(line):
     line=line.strip().replace("\\n", "/n").split("\t")
     ret=[]
     for y in range(1,len(line)):
-        max_back=y-max_len if y-max_len >= 0 else 0
-        sample=random.sample(range(max_back+1, y), y-max_back-1 if y-max_back-1 <=5 else 5)+[max_back]
-        for x in sample:
-            try:
-                ret.append(f"persona: {random.choice(personas)} context: {'/b'.join(line[x:y])}\t{': '.join(line[y].split(': ')[1:])}")
-            except: break
+        x=y-max_len if y-max_len >= 0 else 0
+        try:
+            ret.append(f"persona: {random.choice(personas)} context: {'/b'.join(line[x:y])}\t{': '.join(line[y].split(': ')[1:])}")
+        except: break
     return ret
 
 out=[]
@@ -62,8 +60,9 @@ random.shuffle(val)
 print(len(out))
 print(len(val))
 
-pbar, fst=tqdm(total=len(out), desc="Writing Train..."), True 
+pbar=tqdm(total=len(out), desc="Writing Train...")
 for part, i in enumerate(range(int(len(out)/partitions), len(out), int(len(out)/partitions))):
+    fst=True
     with gzip.open(f"{output_file}-train-{part}.txt.gz", "wb", compresslevel=compression_level) as t:
         for line in out[i-int(len(out)/partitions):i]:
             if not fst: line="\n"+line
@@ -72,8 +71,9 @@ for part, i in enumerate(range(int(len(out)/partitions), len(out), int(len(out)/
             pbar.update(1)
 pbar.close()
 
-pbar, fst=tqdm(total=len(val), desc="Writing val..."), True 
+pbar=tqdm(total=len(val), desc="Writing val...")
 for part, i in enumerate(range(int(len(val)/partitions), len(val), int(len(val)/partitions))):
+    fst=True
     with gzip.open(f"{output_file}-val-{part}.txt.gz", "wb", compresslevel=compression_level) as v:
         for line in val[i-int(len(val)/partitions):i]:
             if not fst: line="\n"+line

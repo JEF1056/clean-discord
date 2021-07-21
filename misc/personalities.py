@@ -25,7 +25,7 @@ personas=[
 
 max_len=10
 compression_level=9
-output_file="personality"
+output_file="../../cleaned/persona/persona"
 partitions= 1000
 
 def gen_all(line):
@@ -35,7 +35,7 @@ def gen_all(line):
         x=y-max_len if y-max_len >= 0 else 0
         try:
             ret.append(f"persona: {random.choice(personas)} context: {'/b'.join(line[x:y])}\t{': '.join(line[y].split(': ')[1:])}")
-        except: pass
+        except: break
     return ret
 
 out=[]
@@ -50,9 +50,9 @@ for example in tqdm(examples_pairs, "Generating Pairs..."):
 
 for example in tqdm(examples_convos, "Generating Convos..."):
     random.shuffle(names)
-    for name in names[:400]:
+    for name in names[:500]:
         out.extend(gen_all(example.replace("[USER]", name).replace("[BOT]", "Jade")))
-    for name in names[:40]:
+    for name in names[:50]:
         val.extend(gen_all(example.replace("[USER]", name).replace("[BOT]", "Jade")))
     
 random.shuffle(out)
@@ -60,9 +60,10 @@ random.shuffle(val)
 print(len(out))
 print(len(val))
 
-pbar, fst=tqdm(total=len(out), desc="Writing Train..."), True 
-with gzip.open(f"train-{output_file}.txt.gz", "wb", compresslevel=compression_level) as t:
-    for part, i in enumerate(range(int(len(out)/partitions), len(out), int(len(out)/partitions))):  
+pbar=tqdm(total=len(out), desc="Writing Train...")
+for part, i in enumerate(range(int(len(out)/partitions), len(out), int(len(out)/partitions))):
+    fst=True
+    with gzip.open(f"{output_file}-train-{part}.txt.gz", "wb", compresslevel=compression_level) as t:
         for line in out[i-int(len(out)/partitions):i]:
             if not fst: line="\n"+line
             else: fst=False
@@ -70,9 +71,10 @@ with gzip.open(f"train-{output_file}.txt.gz", "wb", compresslevel=compression_le
             pbar.update(1)
 pbar.close()
 
-pbar, fst=tqdm(total=len(val), desc="Writing val..."), True 
-with gzip.open(f"val-{output_file}.txt.gz", "wb", compresslevel=compression_level) as v:
-    for part, i in enumerate(range(int(len(val)/partitions), len(val), int(len(val)/partitions))):  
+pbar=tqdm(total=len(val), desc="Writing val...")
+for part, i in enumerate(range(int(len(val)/partitions), len(val), int(len(val)/partitions))):
+    fst=True
+    with gzip.open(f"{output_file}-val-{part}.txt.gz", "wb", compresslevel=compression_level) as v:
         for line in val[i-int(len(val)/partitions):i]:
             if not fst: line="\n"+line
             else: fst=False

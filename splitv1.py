@@ -30,11 +30,11 @@ except: pass
 if args.personality: personalities=json.load(io.open(args.personality, "r", encoding="utf-8"))
 
 def writefile(data, pref, split, num):
-    fst=False
+    fst=True
     with gzip.open(os.path.join(args.out, f"{pref}-{split}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
         for line in data:
             if fst:
-                f.write(f"{line}\n".encode("utf-8"))
+                f.write(f"{line}".encode("utf-8"))
                 fst=False
             else: f.write(f"\n{line}".encode("utf-8"))
 
@@ -43,11 +43,11 @@ def get_perms(conversation):
     for y in range(1,len(conversation)):
         max_back=y-args.max_length if y-args.max_length >= 0 else 0
         sample=random.sample(range(max_back+1, y), y-max_back-1 if y-max_back-1 <=5 else 5)+[max_back]
-        for x in sample: 
+        for x in sample:
             if args.personality: psn=(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('\t',' ')
-            ctx=(' '.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ')
-            rsp=(': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ')
-            temp.append(f"persona: {psn} context: " if args.personality else ""+f"{ctx}\t{rsp}".strip().replace("\n","\\n"))#.replace("\\n", "/n"))
+            ctx=(' \\b '.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ')
+            nm, rsp=conversation[y][0].split(': ')[0], (': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ')
+            temp.append(f"persona: {psn} context: " if args.personality else ""+f"{ctx} \\b {nm}: \t{rsp}".strip().replace("\n","\\n"))#.replace("\\n", "/n"))
     return temp
     
 def worker(filename, split, num, debug=False):

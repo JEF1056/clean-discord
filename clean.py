@@ -38,7 +38,7 @@ def run_regex():
     except: pass
     print("(regex): ", end="")
     if args.overwrite: tasks=os.listdir(args.dir); print(f"Overwriting data in {args.out}")
-    else: tasks=[m for m in os.listdir(args.dir) if re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", m).group(0)+".txt" not in os.listdir(args.out)]; print(f"Found {len(os.listdir(args.dir))-len(tasks)} files in {args.out}, skipping." if len(os.listdir(args.dir))-len(tasks) != 0 else f"Writing data to {args.out}")
+    else: tasks=[m for m in os.listdir(args.dir) if re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", m).group(0)+".json" not in os.listdir(args.out)]; print(f"Found {len(os.listdir(args.dir))-len(tasks)} files in {args.out}, skipping." if len(os.listdir(args.dir))-len(tasks) != 0 else f"Writing data to {args.out}")
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
         ret=list(tqdm(executor.map(worker_regex, tasks, repeat(args.dir), repeat(args.out), repeat(args.adv_prog)), total=len(tasks), desc="Cleaning..."))
         
@@ -46,7 +46,7 @@ def run_detox(to_clean):
     #precompute tasks and create required dir
     tasks=[f for f in os.listdir(to_clean) if f.endswith(".json")]
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean)), total=len(tasks), desc="Detoxifying..."))
+        ret=list(tqdm(executor.map(worker_detox, tasks, repeat(to_clean), repeat(args.adv_prog)), total=len(tasks), desc="Detoxifying..."))
     
 def run_antispam(to_clean):
     #precompute tasks and create required dir

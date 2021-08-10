@@ -1,3 +1,4 @@
+from multiprocessing import context
 import os
 import io
 import json
@@ -43,22 +44,25 @@ def get_perms(conversation):
         max_back=y-args.max_length if y-args.max_length >= 0 else 0
         sample=random.sample(range(max_back+1, y), y-max_back-1 if y-max_back-1 <=5 else 5)+[max_back]
         for x in sample: 
-            psn=(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('\t',' ')
-            ctx=('/b'.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ')
+            if args.personality: psn=(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('\t',' ')
+            ctx=(' '.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ')
             rsp=(': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ')
-            temp.append(f"persona: {psn} context: {ctx}\t{rsp}".strip().replace("\\n", "/n").replace("\n","/n"))
+            temp.append(f"persona: {psn} context: " if args.personality else ""+f"{ctx}\t{rsp}".strip().replace("\n","\\n"))#.replace("\\n", "/n"))
     return temp
     
 def worker(filename, split, num, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     temp, data=[], json.load(io.open(filename, "r", encoding="utf-8"))
     for conversation in data["conversations"]:
-        per=not set([pair[1] for pair in conversation]).isdisjoint(list(personalities))
-        if per: pref="persona"
+        if args.personality: 
+            per=not set([pair[1] for pair in conversation]).isdisjoint(list(personalities))
+            if per: pref="persona"
+            else: pref="context"
         else: pref="context"
         if len(conversation) >= 2:
             temp.extend(get_perms(conversation))
-    writefile(temp, pref, split, num)
+    pref="context"
+    if len(temp) > 0: writefile(temp, pref, split, num)
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     return 0
     

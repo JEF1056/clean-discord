@@ -4,7 +4,7 @@ import os
 import json
 import ciso8601
 import numpy as np
-from src.helpers import clean
+from src.helpers import clean, chunks
 from pyinstrument import Profiler
 from profanity_check import predict
 from atpbar import atpbar, register_reporter, find_reporter
@@ -63,7 +63,7 @@ def worker_regex(filename, input_folder, output_folder, adv_prog=False, debug=Fa
                 if last_author != data["author"]["id"] or len(msg)==0:
                     msg.append([cleaned, data["author"]["id"]])
                     curr_time=ciso8601.parse_datetime(data['timestamp'])
-                    if (last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1)):
+                    if ((last_seen and ((curr_time - last_seen).total_seconds() > 600 and len(msg) > 1) or len(msg) == 1000)):
                         #msg="\t".join(msg)
                         temp["conversations"].append(msg)
                         msg=[]; last_author=""; last_seen=None
@@ -71,7 +71,7 @@ def worker_regex(filename, input_folder, output_folder, adv_prog=False, debug=Fa
                 else:
                     msg[-1][0]+=f"\\n{cleaned[cleaned.find(': ')+2:]}"
         last_seen = curr_time
-    if msg!=[]: temp["conversations"].append(msg.strip().replace("\t", " ")); msg=[]
+    if msg!=[]: temp["conversations"].append(msg); msg=[]
     
     temp["stats"]["current"].append(sum([len(convo) for convo in temp["conversations"]]))
     temp["stats"]["removed"].append(temp["stats"]["original"] - temp["stats"]["current"][-1])
@@ -82,16 +82,24 @@ def worker_regex(filename, input_folder, output_folder, adv_prog=False, debug=Fa
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     if adv_prog: clear()
 
-def worker_detox(filename, output_folder, debug=False):
+def worker_detox(filename, output_folder, adv_prog, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     ch=re.search(r"\[\d{18}\](?:\s\[part \d{1,3}\])*", filename).group(0)
     temp, temp_lst = json.load(io.open(os.path.join(output_folder,f"{ch}.json"), mode="r", encoding="utf-8")), []
     
-    for convo in temp["conversations"]:
+    if adv_prog:
+        global reporter
+        register_reporter(reporter)
+        iterator=atpbar(temp["conversations"], name=ch)
+    else: iterator=temp["conversations"]
+
+    for convo in iterator:
         convo=np.array(convo)
         try:
             pred_map=predict(np.array([msg[0] for msg in convo]))
-            temp_lst.append(convo[pred_map < 1].tolist())
+            rem=convo[pred_map < 1].tolist()
+            if len(rem) == len(convo):
+                temp_lst.append(rem)
         except: pass
         
     temp["conversations"]=temp_lst

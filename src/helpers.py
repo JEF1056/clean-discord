@@ -37,6 +37,11 @@ def convemojis(i):
     if i in emojis: return emojis[i]
     return i
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
 #precompile regex
 r1=re.compile(r'@Deleted User')
 r2=re.compile(r'https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=\n]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)|:[^\n\s]+?:|[\w\-\.]+@(?:[\w-]+\.)+[\w-]{2,4}|(?:\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}|```.+?```\n?|(?:\\n)+|\b(?:a*ha+h[ha]*|o?l+o+l+[ol]*)\b|[^a-z0-9.,:;\'\”@!?\s\<\>\/\-\+\=\(\)\[\]*_'+''.join(emojis)+r']+|(?<=[a-z.,\':;!?\/]) +(?=[.,\'!?\/])|([,\':;\s\/\(\)\[\]\+\-\<\>\=])\1+|([_])\2{2,}|([a-z.!?*])\3{3,}|(: )(?:> (?:.*?)(?:\n+|\\n+|$))+', flags=re.DOTALL | re.IGNORECASE)

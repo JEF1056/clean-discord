@@ -10,10 +10,18 @@ import concurrent.futures
 from itertools import repeat
 from pyinstrument import Profiler
 
+def str2bool(v):
+    if isinstance(v, bool): return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'): return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'): return False
+    else: raise argparse.ArgumentTypeError('Boolean value expected.')
+
 parser = argparse.ArgumentParser(description='Split dataset in multiple files into train and validation sets')
 parser.add_argument('-dir', nargs="+", default=["data"],
                     help='the data folder containing the processed files on the top level')
 parser.add_argument('-out', type=str, default="context",
+                    help='prefix the compressed output file sets')
+parser.add_argument('-prefix', type=str, default="context",
                     help='prefix the compressed output file sets')
 parser.add_argument('-max_length', type=int, default=8,
                     help='maximum number of turns that the inputs amy have')
@@ -23,15 +31,17 @@ parser.add_argument('-workers', type=int, default=8,
                     help='number of workers to use (reccomended to be core count *2)')
 parser.add_argument('-personality', type=str, default=None,
                     help='file containing personality data')
+parser.add_argument("-no_names", type=str2bool, nargs='?', const=True, default=False, 
+                    help="do not use names")
 args = parser.parse_args()
 
-try:os.mkdir("temp")
+try:os.mkdir(args.out)
 except: pass
 if args.personality: personalities=json.load(io.open(args.personality, "r", encoding="utf-8"))
 
-def writefile(data, pref, split, num):
+def writefile(data, split, num):
     fst=True
-    with gzip.open(os.path.join(args.out, f"{pref}-{split}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
+    with gzip.open(os.path.join(args.out, f"{args.prefix}-{split}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
         for line in data:
             if fst:
                 f.write(f"{line}".encode("utf-8"))
@@ -45,24 +55,22 @@ def get_perms(conversation):
         sample=random.sample(range(max_back+1, y), y-max_back-1 if y-max_back-1 <=5 else 5)+[max_back]
         for x in sample:
             if args.personality: psn=(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('\t',' ')
-            ctx=(' \\b '.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ')
-            nm, rsp=conversation[y][0].split(': ')[0], (': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ')
-            temp.append(f"persona: {psn} context: " if args.personality else ""+f"{ctx} \\b {nm}: \t{rsp}".strip().replace("\n","\\n"))#.replace("\\n", "/n"))
+            ctx=(' \\b '.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ').strip()
+            if not args.no_names:
+                nm, rsp=conversation[y][0].split(': ')[0], (': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ')
+                temp.append(f"persona: {psn} context: " if args.personality else ""+f"{ctx} \\b {nm}: \t{rsp}".strip().replace("\n","\\n"))#.replace("\\n", "/n"))
+            else:
+                rsp=conversation[y][0].replace('\t',' ')
+                temp.append(f"{ctx.strip()}\t{rsp.strip()}".replace("\n","\\n"))#.replace("\\n", "/n"))
     return temp
     
 def worker(filename, split, num, debug=False):
     if debug: profiler = Profiler(); profiler.start()
     temp, data=[], json.load(io.open(filename, "r", encoding="utf-8"))
     for conversation in data["conversations"]:
-        if args.personality: 
-            per=not set([pair[1] for pair in conversation]).isdisjoint(list(personalities))
-            if per: pref="persona"
-            else: pref="context"
-        else: pref="context"
         if len(conversation) >= 2:
             temp.extend(get_perms(conversation))
-    pref="context"
-    if len(temp) > 0: writefile(temp, pref, split, num)
+    if len(temp) > 0: writefile(temp, split, num)
     if debug: profiler.stop(); print(profiler.output_text(unicode=True, color=True))
     return 0
     

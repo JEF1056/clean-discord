@@ -41,7 +41,7 @@ if args.personality: personalities=json.load(io.open(args.personality, "r", enco
 
 def writefile(data, split, num):
     fst=True
-    with gzip.open(os.path.join(args.out, f"{args.prefix}-{split}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
+    with gzip.open(os.path.join(args.out, f"{split}-{args.prefix}-{num}.txt.gz"), "w", compresslevel=args.compression_level) as f:
         for line in data:
             if fst:
                 f.write(f"{line}".encode("utf-8"))
@@ -51,17 +51,17 @@ def writefile(data, split, num):
 def get_perms(conversation):
     temp=[]
     for y in range(1,len(conversation)):
-        max_back=y-args.max_length if y-args.max_length >= 0 else 0
-        sample=random.sample(range(max_back+1, y), y-max_back-1 if y-max_back-1 <=5 else 5)+[max_back]
-        for x in sample:
-            if args.personality: psn=(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('\t',' ')
-            ctx=(' \\b '.join([msg[0] for msg in conversation[x:y]])).replace('\t',' ').strip()
-            if not args.no_names:
-                nm, rsp=conversation[y][0].split(': ')[0], (': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ')
-                temp.append(f"persona: {psn} context: " if args.personality else ""+f"{ctx} \\b {nm}: \t{rsp}".strip().replace("\n","\\n"))#.replace("\\n", "/n"))
-            else:
-                rsp=conversation[y][0].replace('\t',' ')
-                temp.append(f"{ctx.strip()}\t{rsp.strip()}".replace("\n","\\n"))#.replace("\\n", "/n"))
+        x=y-args.max_length if y-args.max_length >= 0 else 0
+        #sample=random.sample(range(max_back+1, y), y-max_back-1 if y-max_back-1 <=5 else 5)+[max_back]
+        #for x in sorted(sample):
+        if args.personality: psn=(random.choice(personalities[str(conversation[y][1])]) if str(conversation[y][1]) in personalities else 'None').replace('\t',' ')
+        ctx=('\\'.join([msg[0].replace("\\", "") for msg in conversation[x:y]])).replace('\t',' ').strip()
+        if not args.no_names:
+            nm, rsp=conversation[y][0].split(': ')[0], (': '.join(conversation[y][0].split(': ')[1:])).replace('\t',' ').replace("\\", "")
+            temp.append(f"persona: {psn} context: " if args.personality else ""+f"{ctx}\\{nm}: \t{rsp}".strip().replace("\n","\\n"))#.replace("\\n", "/n"))
+        else:
+            rsp=conversation[y][0].replace('\t',' ').replace("\\", "")
+            temp.append(f"context: {ctx.strip()} response:\t{rsp.strip()}".replace("\n","\\n"))#.replace("\\n", "/n"))
     return temp
     
 def worker(filename, split, num, debug=False):
@@ -87,4 +87,4 @@ if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
         ret=list(tqdm(executor.map(worker, train_files, repeat("train"), range(len(train_files))), total=len(train_files), desc="Writing train..."))
     with concurrent.futures.ProcessPoolExecutor(max_workers=args.workers) as executor:
-        ret=list(tqdm(executor.map(worker, eval_files, repeat("val"), range(len(train_files))), total=len(eval_files), desc="Writing val..."))
+        ret=list(tqdm(executor.map(worker, eval_files, repeat("validation"), range(len(train_files))), total=len(eval_files), desc="Writing val..."))
